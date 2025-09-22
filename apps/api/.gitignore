@@ -1,0 +1,19 @@
+# Environment variables
+.env
+.env.*
+
+# Dependencies
+node_modules/
+.pnpm-lock.yaml
+
+# Build outputs
+dist/
+build/
+.out/
+
+# Database
+*.db
+*.sqlite
+
+# Logs
+*.log

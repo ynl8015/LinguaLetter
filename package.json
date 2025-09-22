@@ -1,0 +1,17 @@
+{
+  "name": "lingualetter",
+  "private": true,
+  "packageManager": "pnpm@9.15.9",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "typescript": "^5.5.0",
+    "@types/node": "^20.10.0"
+  }
+}

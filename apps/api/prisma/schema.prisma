@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  picture   String?
+  googleId  String?  @unique @map("google_id")
+  provider  String   @default("google")
+  createdAt DateTime @default(now()) @map("created_at")
+  lastLogin DateTime @default(now()) @map("last_login")
+
+  // 관계
+  sessions    Session[]
+  consents    UserConsent[]
+  stats       UserStats?
+  feedbacks   FeedbackAnalysis[]
+
+  @@map("users")
+}
+
+model Article {
+  id                   String   @id @default(cuid())
+  trendTopic          String   @map("trend_topic")
+  koreanArticle       String   @map("korean_article") @db.Text
+  englishTranslation  String   @map("english_translation") @db.Text
+  expression          String
+  literalTranslation  String   @map("literal_translation")
+  idiomaticTranslation String  @map("idiomatic_translation")
+  reason              String   @db.Text
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  @@map("articles")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  teacher   String
+  topic     String
+  summary   String?  @db.Text
+  feedback  String[] @default([])
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feedbackAnalysis FeedbackAnalysis[]
+
+  @@map("sessions")
+}
+
+model UserConsent {
+  id                Int      @id @default(autoincrement())
+  userId            String   @map("user_id")
+  termsAccepted     Boolean  @map("terms_accepted")
+  privacyAccepted   Boolean  @map("privacy_accepted")
+  newsletterOptIn   Boolean  @default(false) @map("newsletter_opt_in")
+  termsVersion      String   @map("terms_version")
+  privacyVersion    String   @map("privacy_version")
+  newsletterVersion String   @map("newsletter_version")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_consents")
+}
+
+model UserStats {
+  id             Int       @id @default(autoincrement())
+  userId         String    @unique @map("user_id")
+  totalSessions  Int       @default(0) @map("total_sessions")
+  totalMessages  Int       @default(0) @map("total_messages")
+  streakDays     Int       @default(0) @map("streak_days")
+  lastStudyDate  DateTime? @map("last_study_date")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_stats")
+}
+
+model FeedbackAnalysis {
+  id                   Int      @id @default(autoincrement())
+  sessionId            String   @map("session_id")
+  userId               String   @map("user_id")
+  overallScore         Float    @map("overall_score")
+  overallGrade         String   @map("overall_grade")
+  grammarScore         Float    @map("grammar_score")
+  vocabularyScore      Float    @map("vocabulary_score")
+  fluencyScore         Float    @map("fluency_score")
+  comprehensionScore   Float    @map("comprehension_score")
+  naturalnessScore     Float    @map("naturalness_score")
+  strengths            String[]
+  improvements         String[]
+  corrections          String   @db.Text // JSON string
+  recommendedFocus     String   @map("recommended_focus")
+  nextTopics           String[] @map("next_topics")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("feedback_analysis")
+}
+
+model NewsletterSubscriber {
+  id               Int       @id @default(autoincrement())
+  email            String    @unique
+  subscribedAt     DateTime  @default(now()) @map("subscribed_at")
+  isActive         Boolean   @default(false) @map("is_active")
+  confirmToken     String?   @unique @map("confirm_token")
+  confirmedAt      DateTime? @map("confirmed_at")
+  unsubscribeToken String?   @unique @map("unsubscribe_token")
+
+  @@map("newsletter_subscribers")
+}
