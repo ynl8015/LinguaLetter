@@ -55,16 +55,6 @@ export const userResolvers = {
   },
 
   Mutation: {
-    googleAuth: async (_: any, { input }: any) => {
-      try {
-        return await handleGoogleAuth(input);
-      } catch (error: any) {
-        return {
-          success: false,
-          error: error.message
-        };
-      }
-    },
 
     submitConsent: async (_: any, { input }: any, { user, prisma }: Context) => {
       const currentUser = requireAuth(user);

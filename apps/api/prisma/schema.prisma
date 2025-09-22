@@ -13,6 +13,7 @@ model User {
   name      String?
   picture   String?
   googleId  String?  @unique @map("google_id")
+  kakaoId   String?  @unique
   provider  String   @default("google")
   createdAt DateTime @default(now()) @map("created_at")
   lastLogin DateTime @default(now()) @map("last_login")
