@@ -38,6 +38,7 @@ interface FeedbackData {
   fluencyScore: number;
   comprehensionScore: number;
   naturalnessScore: number;
+  interactionScore: number; // 추가된 필드
   strengths: string[];
   improvements: string[];
   corrections: Array<{
@@ -57,6 +58,7 @@ interface OverallStats {
     fluency: number;
     comprehension: number;
     naturalness: number;
+    interaction: number; // 추가된 필드
     overall: number;
   };
   totalSessions: number;
@@ -103,6 +105,7 @@ export default function Dashboard() {
           fluency: 0,
           comprehension: 0,
           naturalness: 0,
+          interaction: 0, // 추가된 필드
           overall: 0
         },
         totalSessions: 0,
@@ -118,6 +121,7 @@ export default function Dashboard() {
     const avgFluency = feedbackList.reduce((sum, f) => sum + f.fluencyScore, 0) / totalFeedbacks;
     const avgComprehension = feedbackList.reduce((sum, f) => sum + f.comprehensionScore, 0) / totalFeedbacks;
     const avgNaturalness = feedbackList.reduce((sum, f) => sum + f.naturalnessScore, 0) / totalFeedbacks;
+    const avgInteraction = feedbackList.reduce((sum, f) => sum + (f.interactionScore || 0), 0) / totalFeedbacks; // 추가된 필드 (null 처리)
     const avgOverall = feedbackList.reduce((sum, f) => sum + f.overallScore, 0) / totalFeedbacks;
 
     // 가장 자주 나오는 강점과 개선점 추출
@@ -170,6 +174,7 @@ export default function Dashboard() {
         fluency: avgFluency,
         comprehension: avgComprehension,
         naturalness: avgNaturalness,
+        interaction: avgInteraction, // 추가된 필드
         overall: avgOverall
       },
       totalSessions: totalFeedbacks,
@@ -254,10 +259,10 @@ export default function Dashboard() {
               <div className="bg-white rounded-[20px] p-6 shadow-lg border border-gray-200">
                 <h3 className="text-sm font-medium text-gray-600 mb-2">마지막 학습</h3>
                 <p className="text-lg font-bold text-gray-800">
-  {userStats.lastStudyDate 
-    ? new Date(userStats.lastStudyDate).toLocaleDateString('ko-KR') 
-    : '없음'}
-</p>
+                  {userStats.lastStudyDate 
+                    ? new Date(userStats.lastStudyDate).toLocaleDateString('ko-KR') 
+                    : '없음'}
+                </p>
               </div>
             </div>
           )}
@@ -304,13 +309,13 @@ export default function Dashboard() {
                           )}
                         </div>
                         <span className="text-gray-400 text-xs ml-4">
-  {new Date(session.createdAt).toLocaleDateString('ko-KR', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })}
-</span>
+                          {new Date(session.createdAt).toLocaleDateString('ko-KR', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
                       </div>
                     </div>
                   );
@@ -346,14 +351,14 @@ export default function Dashboard() {
                 <div>
                   <h2 className="text-2xl font-bold text-gray-800">상세 피드백</h2>
                   <p className="text-gray-600 mt-1">
-  {new Date(selectedFeedback.createdAt).toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })}
-</p>
+                    {new Date(selectedFeedback.createdAt).toLocaleDateString('ko-KR', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
                 </div>
                 <button 
                   onClick={() => setSelectedFeedback(null)}
@@ -385,7 +390,7 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  {/* 레이더 차트 */}
+                  {/* 레이더 차트 - 6개 영역으로 확장 */}
                   <div className="bg-white rounded-[20px] p-6 border border-gray-200">
                     <h3 className="text-lg font-bold text-gray-800 mb-6 text-center">영역별 상세 분석</h3>
                     <div className="h-80 w-full mb-6">
@@ -395,7 +400,8 @@ export default function Dashboard() {
                           { subject: '어휘', score: selectedFeedback.vocabularyScore },
                           { subject: '유창성', score: selectedFeedback.fluencyScore },
                           { subject: '이해력', score: selectedFeedback.comprehensionScore },
-                          { subject: '자연스러움', score: selectedFeedback.naturalnessScore }
+                          { subject: '자연스러움', score: selectedFeedback.naturalnessScore },
+                          { subject: '상호작용', score: selectedFeedback.interactionScore || 0 } // 추가된 필드
                         ]}>
                           <PolarGrid 
                             gridType="polygon"
@@ -427,14 +433,15 @@ export default function Dashboard() {
                       </ResponsiveContainer>
                     </div>
                     
-                    {/* 점수 표시 */}
-                    <div className="grid grid-cols-5 gap-4 text-center">
+                    {/* 점수 표시 - 6개 영역으로 확장 */}
+                    <div className="grid grid-cols-3 lg:grid-cols-6 gap-4 text-center">
                       {[
                         { name: '문법', score: selectedFeedback.grammarScore },
                         { name: '어휘', score: selectedFeedback.vocabularyScore },
                         { name: '유창성', score: selectedFeedback.fluencyScore },
                         { name: '이해력', score: selectedFeedback.comprehensionScore },
-                        { name: '자연스러움', score: selectedFeedback.naturalnessScore }
+                        { name: '자연스러움', score: selectedFeedback.naturalnessScore },
+                        { name: '상호작용', score: selectedFeedback.interactionScore || 0 } // 추가된 필드
                       ].map((item, index) => (
                         <div key={index} className="bg-gray-50 rounded-[12px] p-3">
                           <span className="text-sm text-gray-600 block mb-1">{item.name}</span>

@@ -148,6 +148,13 @@ ${articles.map((a: any, i : number) => `${i + 1}. ${a.title} - ${a.snippet}`).jo
 영어 의역(O) : political leaning
 왜 의역이 이렇게 되는지 : 영어에서 "color"는 물리적 색상에 국한되며 은유적으로 정치적 성향을 표현하지 않음. 따라서 "leaning"이 자연스럽다.
 
+한국어 기사 : KT 가입자들을 향한 소액결제 피해가 새벽 시간대에 집중적으로 발생한 가운데, 이번 사태는 사실 13년 전부터 경고된 ‘예견된 참사’였다는 비판이 제기된다. 2012년 KISA가 “펨토셀 보안 취약점 연구”를 통해 인증토큰 복제, 중간자 공격 가능성 등을 포함한 29가지 위협을 보고했음에도, 그 경고는 제대로 반영되지 않았다는 것이다. 이상휘 의원은 “13년 전 경고를 흘려들은 결과가 이번 해킹 참사로 되돌아왔다”고 지적했다.
+영어 번역(의역 중심) : Amid the wave of small-payment fraud targeting KT users in the early hours, critics say this incident was a “foreseeable disaster” warned about 13 years ago. Back in 2012, KISA reportedly published a “femtocell security vulnerability study” listing 29 threat scenarios, including token duplication and man-in-the-middle attacks — yet none were properly addressed. Representative Lee Sang-hui asserted, “Ignoring warnings from 13 years ago has come back to haunt us in this hacking disaster.”
+한국어적 표현 : 소액결제 시스템
+영어 직역(X) : micro-payment system
+영어 의역(O) : small-payment system
+왜 의역이 이렇게 되는지 : ‘소액결제’는 단순히 ‘micropayment’로 번역되지 않으며, 금융·블록체인 업계에서는 ‘초미세 단위 결제’를 뜻하는 전문 용어로 쓰인다. 한국에서 말하는 ‘소액결제’는 일상적 맥락의 휴대폰·온라인 결제를 지칭하므로, 영어에서는 ‘small-payment system’이 더 자연스럽고 의미도 정확하게 전달된다.
+
 참고 기사:
 ${selectedArticles.map((a: any) => `- ${a.title}: ${a.snippet}`).join("\n")}
 `,

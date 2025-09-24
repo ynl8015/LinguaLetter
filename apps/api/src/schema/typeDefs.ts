@@ -66,6 +66,7 @@ export const typeDefs = `#graphql
     fluencyScore: Float!
     comprehensionScore: Float!
     naturalnessScore: Float!
+    interactionScore: Float!
     strengths: [String!]!
     improvements: [String!]!
     corrections: [Correction!]!
@@ -89,6 +90,7 @@ export const typeDefs = `#graphql
     expression: String!
     literalTranslation: String!
     idiomaticTranslation: String!
+    createdAt: String
     reason: String!
   }
 

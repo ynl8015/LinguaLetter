@@ -16,7 +16,7 @@ export async function analyzeFeedback(input: FeedbackInput): Promise<any> {
     .map((msg: { role: string; content: string }) => `${msg.role === 'user' ? 'Learner' : 'Teacher'}: ${msg.content}`)
     .join('\n');
 
-  const finalPrompt = `
+  const Prompt = `
 You are 'Alex', a highly experienced OPIc evaluator with over 10 years of experience. Your specialty is providing feedback that is not only accurate but also encouraging and constructively critical. Your evaluation philosophy is holistic: you value attempts at complex structures even with minor errors over perfect but overly simple language.
 
 ### Conversation Details
@@ -86,7 +86,7 @@ First, determine the overall_score. Then, assign the overall_grade based ONLY on
       {
         model: "gpt-4o",
         messages: [
-          { role: "user", content: finalPrompt }
+          { role: "user", content: Prompt }
         ],
         temperature: 0.2, // 규칙을 엄격히 따르도록 온도를 더 낮춤
         response_format: { type: "json_object" }
@@ -110,6 +110,7 @@ First, determine the overall_score. Then, assign the overall_grade based ONLY on
         fluencyScore: feedbackData.fluency_score,
         comprehensionScore: feedbackData.comprehension_score,
         naturalnessScore: feedbackData.naturalness_score,
+        interactionScore: feedbackData.interaction_score,
         strengths: feedbackData.strengths || [],
         improvements: feedbackData.improvements || [],
         corrections: JSON.stringify(feedbackData.corrections || []),

@@ -43,7 +43,7 @@ OPIc 스타일 피드백으로 시험을 위한 준비까지.
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 20000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [slides.length]);

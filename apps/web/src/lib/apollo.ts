@@ -52,7 +52,7 @@ export const apolloClient = new ApolloClient({
   }
 });
 
-// ========== GraphQL 쿼리들 ==========
+// GraphQL 쿼리
 
 // 사용자 관련 쿼리
 export const GET_ME = gql`
@@ -175,7 +175,7 @@ export const GET_ALL_NEWS = gql`
   }
 `;
 
-// ========== 뮤테이션들 ==========
+// 뮤테이션-----------------
 
 // 사용자 관련 뮤테이션
 export const SUBMIT_CONSENT = gql`

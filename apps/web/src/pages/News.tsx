@@ -17,6 +17,27 @@ interface NewsItem {
   createdAt: string;
 }
 
+// 안전한 날짜 파싱 함수
+const formatDate = (dateString: string | null | undefined): string => {
+  if (!dateString) return '날짜 정보 없음';
+  
+  try {
+    // ISO 문자열을 Date 객체로 변환
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return '날짜 정보 없음';
+    }
+    
+    return date.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  } catch {
+    return '날짜 정보 없음';
+  }
+};
+
 export default function News() {
   const { user } = useAuth();
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
@@ -73,11 +94,7 @@ export default function News() {
             {newsItem.trendTopic}
           </span>
           <span className="text-gray-500 text-sm">
-            {new Date().toLocaleDateString('ko-KR', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-              })}
+            {formatDate(newsItem.createdAt)}
           </span>
         </div>
       </div>
@@ -253,11 +270,7 @@ export default function News() {
                         </span>
                       </div>
                       <div className="text-gray-600 text-sm mb-2">
-                        {new Date(item.createdAt).toLocaleDateString('ko-KR', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
+                        {formatDate(item.createdAt)}
                       </div>
                       <p className="text-gray-600 line-clamp-3">{item.koreanArticle}</p>
                       <div className="mt-4 text-sm text-gray-500">
@@ -334,11 +347,7 @@ export default function News() {
                     {selectedNews.trendTopic}
                   </span>
                   <div className="text-gray-500 text-sm">
-                    {new Date(selectedNews.createdAt).toLocaleDateString('ko-KR', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
+                    {formatDate(selectedNews.createdAt)}
                   </div>
                 </div>
                 <button 
