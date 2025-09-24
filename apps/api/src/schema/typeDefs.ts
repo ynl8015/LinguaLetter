@@ -4,6 +4,7 @@ export const typeDefs = `#graphql
     id: ID!
     email: String!
     name: String
+    role: UserRole
     picture: String
     provider: String!
     createdAt: String!
@@ -47,7 +48,13 @@ export const typeDefs = `#graphql
     user: User!
     feedbackAnalysis: [FeedbackAnalysis!]!
   }
-
+  
+  type Correction {
+  original: String
+  corrected: String
+  reason: String
+}
+  
   type FeedbackAnalysis {
     id: Int!
     sessionId: String!
@@ -61,18 +68,12 @@ export const typeDefs = `#graphql
     naturalnessScore: Float!
     strengths: [String!]!
     improvements: [String!]!
-    corrections: [CorrectionItem!]!
+    corrections: [Correction!]!
     recommendedFocus: String!
     nextTopics: [String!]!
     createdAt: String!
     user: User!
     session: Session!
-  }
-
-  type CorrectionItem {
-    original: String!
-    corrected: String!
-    reason: String!
   }
 
   type ChatMessage {
@@ -81,7 +82,25 @@ export const typeDefs = `#graphql
   }
 
   # Input 타입들
+  input NewsInput {
+    trendTopic: String!
+    koreanArticle: String!
+    englishTranslation: String!
+    expression: String!
+    literalTranslation: String!
+    idiomaticTranslation: String!
+    reason: String!
+  }
 
+  input ConsentInput {
+    termsAccepted: Boolean!
+    privacyAccepted: Boolean!
+    newsletterOptIn: Boolean!
+    termsVersion: String!
+    privacyVersion: String!
+    newsletterVersion: String!
+  }
+  
   input ChatInput {
     topic: String!
     message: String!
@@ -108,20 +127,15 @@ export const typeDefs = `#graphql
     topic: String!
   }
 
-  input ConsentInput {
-    termsAccepted: Boolean!
-    privacyAccepted: Boolean!
-    newsletterOptIn: Boolean!
-    termsVersion: String!
-    privacyVersion: String!
-    newsletterVersion: String!
-  }
-
   # Enum 타입들
-  enum TeacherType {
-    EMMA
-    STEVE
+  enum UserRole {
+    USER
+    ADMIN
   }
+    enum TeacherType {
+     emma
+     steve
+   }
 
   # 결과 타입들
   interface Result {
@@ -171,6 +185,11 @@ export const typeDefs = `#graphql
     message: String
   }
 
+  type DeleteResult implements Result {
+    success: Boolean!
+    error: String
+  }
+
   # Queries
   type Query {
     # 현재 사용자 정보 (토큰은 헤더에서)
@@ -179,6 +198,7 @@ export const typeDefs = `#graphql
     # 뉴스 관련
     latestNews: Article
     newsHistory(limit: Int): [Article!]!
+    allNews(limit: Int): [Article!]!  # 관리자 전용
     
     # 사용자 정보 (인증 필요)
     myStats: UserStats
@@ -191,7 +211,6 @@ export const typeDefs = `#graphql
 
   # Mutations
   type Mutation {
-
     # 동의서
     submitConsent(input: ConsentInput!): UserConsent!
     
@@ -204,8 +223,11 @@ export const typeDefs = `#graphql
     # 피드백 분석
     analyzeFeedback(input: FeedbackInput!): FeedbackAnalysis!
     
-    # 뉴스 생성
+    # 뉴스 관리
     generateDailyNews: NewsGenerationResult!
+    createNews(input: NewsInput!): Article!      # 관리자 전용
+    updateNews(id: String!, input: NewsInput!): Article!  # 관리자 전용
+    deleteNews(id: String!): DeleteResult!       # 관리자 전용
     
     # 뉴스레터
     subscribeNewsletter(email: String!): SubscriptionResult!

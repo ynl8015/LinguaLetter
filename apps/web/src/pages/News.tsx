@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
+import { useAuth, isAdmin } from '../contexts/AuthContext';
 import Navbar from '../components/Navbar';
-import { GET_LATEST_NEWS, GET_NEWS_HISTORY } from '../lib/apollo';
+import { GET_LATEST_NEWS, GET_NEWS_HISTORY, GENERATE_DAILY_NEWS } from '../lib/apollo';
 
 interface NewsItem {
   id: string;
@@ -17,18 +18,22 @@ interface NewsItem {
 }
 
 export default function News() {
+  const { user } = useAuth();
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [viewMode, setViewMode] = useState<'latest' | 'history'>('latest');
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 8;
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const ITEMS_PER_PAGE = 6;
+
+  const [generateNews, { loading: generating }] = useMutation(GENERATE_DAILY_NEWS);
 
   // GraphQL 쿼리들
-  const { data: latestNewsData, loading: latestLoading } = useQuery(GET_LATEST_NEWS, {
+  const { data: latestNewsData, loading: latestLoading, refetch: refetchLatest } = useQuery(GET_LATEST_NEWS, {
     skip: viewMode !== 'latest',
     errorPolicy: 'all'
   });
 
-  const { data: historyData, loading: historyLoading } = useQuery(GET_NEWS_HISTORY, {
+  const { data: historyData, loading: historyLoading, refetch: refetchHistory } = useQuery(GET_NEWS_HISTORY, {
     variables: { limit: 50 },
     skip: viewMode !== 'history',
     errorPolicy: 'all'
@@ -45,6 +50,20 @@ export default function News() {
     currentPage * ITEMS_PER_PAGE
   );
 
+  const handleGenerateNews = async () => {
+    try {
+      const result = await generateNews();
+      if (result.data?.generateDailyNews?.success) {
+        refetchLatest();
+        refetchHistory();
+        alert('새로운 뉴스가 생성되었습니다!');
+      }
+    } catch (error) {
+      console.error('뉴스 생성 실패:', error);
+      alert('뉴스 생성에 실패했습니다.');
+    }
+  };
+
   const renderNewsContent = (newsItem: NewsItem) => (
     <div className="max-w-3xl mx-auto">
       {/* 헤더 */}
@@ -54,11 +73,11 @@ export default function News() {
             {newsItem.trendTopic}
           </span>
           <span className="text-gray-500 text-sm">
-            {new Date(newsItem.createdAt).toLocaleDateString('ko-KR', {
+            {new Date().toLocaleDateString('ko-KR', {
               year: 'numeric',
               month: 'long',
               day: 'numeric'
-            })}
+              })}
           </span>
         </div>
       </div>
@@ -130,6 +149,48 @@ export default function News() {
 
       <div className="pt-28 px-6 pb-16">
         <div className="max-w-4xl mx-auto">
+          
+          {/* 관리자 패널 */}
+          {isAdmin(user) && (
+            <div className="mb-12">
+              <div 
+                className="bg-red-50 border border-red-200 rounded-2xl p-6 cursor-pointer transition-all hover:shadow-lg"
+                onClick={() => setShowAdminPanel(!showAdminPanel)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                    <h3 className="text-lg font-semibold text-red-800">Admin Panel</h3>
+                  </div>
+                  <svg 
+                    className={`w-5 h-5 text-red-600 transition-transform ${showAdminPanel ? 'rotate-180' : ''}`}
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                
+                {showAdminPanel && (
+                  <div className="mt-6 flex gap-4 flex-wrap">
+                    <button 
+                      onClick={handleGenerateNews}
+                      disabled={generating}
+                      className="px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg"
+                    >
+                      {generating ? 'Generating...' : 'Generate AI News'}
+                    </button>
+                    <Link 
+                      to="/admin/news"
+                      className="px-6 py-3 bg-gray-600 text-white rounded-xl font-medium hover:bg-gray-700 transition-all shadow-lg"
+                    >
+                      Manage All News
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="mb-12 text-center">
             <h1 className="text-4xl font-bold text-gray-800 mb-4">뉴스</h1>
             <p className="text-lg text-gray-600 mb-8">한국 뉴스로 배우는 자연스러운 의역</p>
@@ -261,7 +322,7 @@ export default function News() {
         </div>
       </div>
 
-      {/* Glassmorphism Modal for History */}
+      {/* 히스토리 */}
       {selectedNews && (
         <div className="fixed inset-0 bg-white/10 backdrop-blur-lg flex items-center justify-center z-50 p-4">
           <div className="bg-white/95 backdrop-blur-sm rounded-[20px] w-full max-w-4xl h-[90vh] overflow-hidden shadow-2xl border border-white/20">
@@ -288,7 +349,7 @@ export default function News() {
                 </button>
               </div>
               
-              {/* Modal Content - Scrollable but hidden scrollbar */}
+              {/* 모달 영역 */}
               <div 
                 className="flex-1 p-8 overflow-y-auto modal-content"
                 style={{

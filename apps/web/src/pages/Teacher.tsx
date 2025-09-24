@@ -116,14 +116,14 @@ export default function Teacher() {
   const teachers: Teacher[] = [
     {
       id: 'EMMA',
-      name: 'Emma',
+      name: 'emma',
       image: emmaImage,
       description: '친근한 매력',
       personality: '친근하고 격려하는 스타일로 학습을 도와줍니다. 자연스러운 대화 중에 필요시에만 교정해줍니다.'
     },
     {
       id: 'STEVE',
-      name: 'Steve',
+      name: 'steve',
       image: steveImage,
       description: '자연스러운 대화',
       personality: '자연스러운 대화를 통해 실전 영어 감각을 길러줍니다. 편안한 분위기에서 자유롭게 대화합니다.'
@@ -164,7 +164,7 @@ export default function Teacher() {
       const result = await chatWithTeacher({
         variables: {
           input: {
-            teacher: selectedTeacher.id,
+            teacher: selectedTeacher.name, // name 사용 (소문자)
             message: currentInput,
             history: messages.map(msg => ({
               role: msg.role,
@@ -224,7 +224,7 @@ export default function Teacher() {
     // 로그인이 안 되어 있으면 로그인 유도
     if (!isAuthenticated || !user) {
       const tempSession = {
-        teacher: selectedTeacher.id,
+        teacher: selectedTeacher.name, // name 사용
         teacherName: selectedTeacher.name,
         topic: currentNews ? currentNews.trendTopic : 'General Practice',
         messages: messages.map(msg => ({
@@ -248,7 +248,7 @@ export default function Teacher() {
       const sessionResult = await createSession({
         variables: {
           input: {
-            teacher: selectedTeacher.id,
+            teacher: selectedTeacher.name, // name 사용
             topic: currentNews ? currentNews.trendTopic : 'General Practice',
             summary: `${selectedTeacher.name}과 ${currentNews ? currentNews.trendTopic : '일반 영어'} 주제로 ${messages.length}개 메시지 대화`,
             feedback: []
@@ -269,7 +269,7 @@ export default function Teacher() {
                   role: msg.role,
                   content: msg.content
                 })),
-                teacher: selectedTeacher.id,
+                teacher: selectedTeacher.name, // name 사용
                 topic: currentNews ? currentNews.trendTopic : 'General Practice'
               }
             }
@@ -305,7 +305,7 @@ export default function Teacher() {
       await createSession({
         variables: {
           input: {
-            teacher: selectedTeacher.id,
+            teacher: selectedTeacher.name, // name 사용
             topic: currentNews ? currentNews.trendTopic : 'General Practice',
             summary: `${selectedTeacher.name}과 짧은 대화 (${messages.filter(m => m.role === 'user').length}개 메시지)`,
             feedback: []
@@ -351,7 +351,7 @@ export default function Teacher() {
         try {
           const sessionData = JSON.parse(tempSession);
           
-          const teacher = teachers.find(t => t.id === sessionData.teacher);
+          const teacher = teachers.find(t => t.name === sessionData.teacher); // name으로 찾기
           if (teacher) {
             setSelectedTeacher(teacher);
           }

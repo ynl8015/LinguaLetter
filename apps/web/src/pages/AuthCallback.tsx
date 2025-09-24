@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { jwtDecode } from 'jwt-decode';
 
 export default function AuthCallback() {
   const location = useLocation();
@@ -22,15 +23,33 @@ export default function AuthCallback() {
     if (token) {
       localStorage.setItem('token', token);
       
-      // AuthContext가 토큰을 인식하도록 refetch 트리거
-      refetchUser();
-      
-      // 더 안전한 방법: 상태 변화를 기다리지 말고 바로 이동
-      navigate('/dashboard');
+      try {
+        const decoded = jwtDecode(token);
+        console.log('Decoded:', decoded); // 구조 확인용
+        
+        const userData = {
+          id: decoded.userId || decoded.sub,
+          email: decoded.email,
+          name: decoded.name,
+          role: decoded.role,
+          provider: decoded.provider || 'google',
+          picture: decoded.picture,
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString()
+        };
+        
+        login(userData, token);
+        navigate('/dashboard');
+      } catch (error) {
+        console.error('토큰 디코딩 실패:', error);
+        // 디코딩 실패시 기존 방식 사용
+        refetchUser();
+        setTimeout(() => navigate('/dashboard'), 1000); // 약간의 지연
+      }
     } else {
       navigate('/login?error=no_token');
     }
-  }, [location, navigate, refetchUser]);
+  }, [location, login, navigate, refetchUser]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">

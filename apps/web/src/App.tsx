@@ -15,6 +15,7 @@ import Subscription from './pages/Subscription';
 import AuthCallback from './pages/AuthCallback';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
+import NewsAdmin from './pages/NewsAdmin';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
                 <Route path="/subscription" element={<Subscription />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />
+                <Route path="/admin/news" element={<NewsAdmin />} />
               </Routes>
             </div>
           </Router>

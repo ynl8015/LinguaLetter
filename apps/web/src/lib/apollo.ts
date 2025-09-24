@@ -1,5 +1,4 @@
-// src/lib/apollo.ts
-import { ApolloClient, InMemoryCache, createHttpLink, from } from '@apollo/client';
+import { ApolloClient, InMemoryCache, createHttpLink, from, gql } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 
@@ -39,7 +38,6 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
   }
 });
 
-
 // Apollo Client 생성
 export const apolloClient = new ApolloClient({
   link: from([errorLink, authLink, httpLink]),
@@ -54,8 +52,7 @@ export const apolloClient = new ApolloClient({
   }
 });
 
-// GraphQL 쿼리들
-import { gql } from '@apollo/client';
+// ========== GraphQL 쿼리들 ==========
 
 // 사용자 관련 쿼리
 export const GET_ME = gql`
@@ -66,6 +63,7 @@ export const GET_ME = gql`
       name
       picture
       provider
+      role
       createdAt
       lastLogin
     }
@@ -161,7 +159,56 @@ export const GET_NEWS_HISTORY = gql`
   }
 `;
 
-// 뮤테이션들
+export const GET_ALL_NEWS = gql`
+  query GetAllNews($limit: Int) {
+    allNews(limit: $limit) {
+      id
+      trendTopic
+      koreanArticle
+      englishTranslation
+      expression
+      literalTranslation
+      idiomaticTranslation
+      reason
+      createdAt
+    }
+  }
+`;
+
+// ========== 뮤테이션들 ==========
+
+// 사용자 관련 뮤테이션
+export const SUBMIT_CONSENT = gql`
+  mutation SubmitConsent($input: ConsentInput!) {
+    submitConsent(input: $input) {
+      id
+      userId
+      termsAccepted
+      privacyAccepted
+      newsletterOptIn
+      termsVersion
+      privacyVersion
+      newsletterVersion
+      createdAt
+    }
+  }
+`;
+
+export const UPDATE_MY_STATS = gql`
+  mutation UpdateMyStats($messagesCount: Int!) {
+    updateMyStats(messagesCount: $messagesCount) {
+      id
+      userId
+      totalSessions
+      totalMessages
+      streakDays
+      lastStudyDate
+      updatedAt
+    }
+  }
+`;
+
+// 채팅/세션 관련 뮤테이션
 export const CHAT_WITH_TEACHER = gql`
   mutation ChatWithTeacher($input: ChatInput!) {
     chatWithTeacher(input: $input) {
@@ -213,36 +260,7 @@ export const ANALYZE_FEEDBACK = gql`
   }
 `;
 
-export const UPDATE_MY_STATS = gql`
-  mutation UpdateMyStats($messagesCount: Int!) {
-    updateMyStats(messagesCount: $messagesCount) {
-      id
-      userId
-      totalSessions
-      totalMessages
-      streakDays
-      lastStudyDate
-      updatedAt
-    }
-  }
-`;
-
-export const SUBMIT_CONSENT = gql`
-  mutation SubmitConsent($input: ConsentInput!) {
-    submitConsent(input: $input) {
-      id
-      userId
-      termsAccepted
-      privacyAccepted
-      newsletterOptIn
-      termsVersion
-      privacyVersion
-      newsletterVersion
-      createdAt
-    }
-  }
-`;
-
+// 뉴스레터 관련 뮤테이션
 export const SUBSCRIBE_NEWSLETTER = gql`
   mutation SubscribeNewsletter($email: String!) {
     subscribeNewsletter(email: $email) {
@@ -253,6 +271,7 @@ export const SUBSCRIBE_NEWSLETTER = gql`
   }
 `;
 
+// 관리자 전용 뮤테이션
 export const GENERATE_DAILY_NEWS = gql`
   mutation GenerateDailyNews {
     generateDailyNews {
@@ -269,6 +288,46 @@ export const GENERATE_DAILY_NEWS = gql`
         reason
         createdAt
       }
+    }
+  }
+`;
+
+export const CREATE_NEWS = gql`
+  mutation CreateNews($input: NewsInput!) {
+    createNews(input: $input) {
+      id
+      trendTopic
+      koreanArticle
+      englishTranslation
+      expression
+      literalTranslation
+      idiomaticTranslation
+      reason
+      createdAt
+    }
+  }
+`;
+
+export const UPDATE_NEWS = gql`
+  mutation UpdateNews($id: String!, $input: NewsInput!) {
+    updateNews(id: $id, input: $input) {
+      id
+      trendTopic
+      koreanArticle
+      englishTranslation
+      expression
+      literalTranslation
+      idiomaticTranslation
+      reason
+      createdAt
+    }
+  }
+`;
+
+export const DELETE_NEWS = gql`
+  mutation DeleteNews($id: String!) {
+    deleteNews(id: $id) {
+      success
     }
   }
 `;

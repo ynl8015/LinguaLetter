@@ -120,8 +120,12 @@ export default function Login() {
       
       if (!tempToken || !tempUser || !consentData) {
         setError('인증 정보가 없습니다. 다시 로그인해주세요.');
+        setConsentSubmitting(false);
         return;
       }
+
+      // Apollo Client가 'token'을 읽을 수 있도록 임시로 저장합니다.
+      localStorage.setItem('token', tempToken);
 
       // GraphQL 뮤테이션으로 동의 제출
       const result = await submitConsent({
@@ -136,9 +140,13 @@ export default function Login() {
           }
         }
       });
+      
+      // 요청이 끝나면 임시로 저장했던 'token'을 즉시 제거합니다.
+      localStorage.removeItem('token');
+
 
       if (result.data?.submitConsent) {
-        // 동의 완료 후 정식 로그인
+        // 동의 완료 후 정식 로그인 (이제 tempToken을 진짜 'token'으로 저장)
         const userData = JSON.parse(tempUser);
         login(userData, tempToken);
         
@@ -155,11 +163,13 @@ export default function Login() {
       }
     } catch (error: any) {
       console.error('동의 제출 오류:', error);
+      localStorage.removeItem('token');
       setError(error.message || '동의 제출 중 오류가 발생했습니다.');
     } finally {
       setConsentSubmitting(false);
     }
   };
+
 
   return (
     <div className="h-screen overflow-hidden bg-white relative">

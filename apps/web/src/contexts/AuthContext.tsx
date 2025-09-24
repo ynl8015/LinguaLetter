@@ -6,6 +6,7 @@ interface User {
   id: string;
   email: string;
   name?: string;
+  role?: 'USER' | 'ADMIN';
   picture?: string;
   provider: string;
   createdAt: string;
@@ -23,6 +24,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+export const isAdmin = (user: User | null): boolean => {
+  return user?.role === 'ADMIN' || user?.email === 'yuunalee1050@gmail.com';
+};
+
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -30,54 +35,41 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
-  // GraphQL 쿼리로 사용자 정보 가져오기
+  const hasToken = !!localStorage.getItem('token');
+
+  // GraphQL 쿼리로 사용자 정보 가져오기 (토큰이 있을 때만)
   const { data, loading, error, refetch } = useQuery(GET_ME, {
-    skip: !localStorage.getItem('token'), // 토큰이 없으면 쿼리 실행하지 않음
+    skip: !hasToken,
     errorPolicy: 'all',
-    onCompleted: (data) => {
-      if (data?.me) {
-        setUser(data.me);
-        setIsAuthenticated(true);
-      } else {
-        setUser(null);
-        setIsAuthenticated(false);
-      }
-      setInitialLoading(false);
-    },
-    onError: (error) => {
-      console.error('사용자 정보 조회 실패:', error);
-      // 인증 실패 시 토큰 제거
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setUser(null);
-      setIsAuthenticated(false);
-      setInitialLoading(false);
-    }
+    notifyOnNetworkStatusChange: true,
   });
 
-  // 초기 로딩 시 토큰 확인
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
-    
-    if (token && savedUser) {
-      try {
-        const userData = JSON.parse(savedUser);
-        setUser(userData);
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('저장된 사용자 데이터 파싱 실패:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-      }
-    }
-    
-    if (!token) {
-      setInitialLoading(false);
-    }
-  }, []);
+  // GraphQL 응답 처리에서
+useEffect(() => {
+  if (!hasToken) {
+    // 토큰이 없으면 로그아웃 상태
+    setUser(null);
+    setIsAuthenticated(false);
+    setInitialized(true);
+    return;
+  }
+
+  if (loading) return;
+
+  if (data?.me) {
+    const userData = data.me;
+    // localStorage와 상태를 동시에 업데이트
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+    setIsAuthenticated(true);
+  }
+  
+  setInitialized(true);
+}, [data, loading, error, hasToken]);
+
+  
 
   const login = (userData: User, token: string) => {
     localStorage.setItem('token', token);
@@ -119,7 +111,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthContextType = {
     user,
     isAuthenticated,
-    loading: initialLoading || loading,
+    loading: !initialized, // 초기화가 완료되지 않았으면 로딩 중
     login,
     logout,
     refetchUser

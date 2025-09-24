@@ -254,10 +254,10 @@ export default function Dashboard() {
               <div className="bg-white rounded-[20px] p-6 shadow-lg border border-gray-200">
                 <h3 className="text-sm font-medium text-gray-600 mb-2">마지막 학습</h3>
                 <p className="text-lg font-bold text-gray-800">
-                  {userStats.lastStudyDate 
-                    ? new Date(userStats.lastStudyDate).toLocaleDateString('ko-KR') 
-                    : '없음'}
-                </p>
+  {userStats.lastStudyDate 
+    ? new Date(userStats.lastStudyDate).toLocaleDateString('ko-KR') 
+    : '없음'}
+</p>
               </div>
             </div>
           )}
@@ -304,13 +304,13 @@ export default function Dashboard() {
                           )}
                         </div>
                         <span className="text-gray-400 text-xs ml-4">
-                          {new Date(session.createdAt).toLocaleDateString('ko-KR', {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </span>
+  {new Date(session.createdAt).toLocaleDateString('ko-KR', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })}
+</span>
                       </div>
                     </div>
                   );
@@ -346,14 +346,14 @@ export default function Dashboard() {
                 <div>
                   <h2 className="text-2xl font-bold text-gray-800">상세 피드백</h2>
                   <p className="text-gray-600 mt-1">
-                    {new Date(selectedFeedback.createdAt).toLocaleDateString('ko-KR', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
+  {new Date(selectedFeedback.createdAt).toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })}
+</p>
                 </div>
                 <button 
                   onClick={() => setSelectedFeedback(null)}

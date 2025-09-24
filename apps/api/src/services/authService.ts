@@ -5,6 +5,7 @@ import prisma from '../db';
 const TERMS_VERSION = process.env.TERMS_VERSION || "1.0.0";
 const PRIVACY_VERSION = process.env.PRIVACY_VERSION || "1.0.0";
 const NEWSLETTER_VERSION = process.env.NEWSLETTER_VERSION || "1.0.0";
+const ADMIN_EMAILS = ['yuunalee1050@gmail.com'];
 
 export interface GoogleAuthInput {
   googleToken: string;
@@ -34,6 +35,8 @@ export async function handleGoogleAuth(input: GoogleAuthInput) {
     throw new Error("필수 정보가 누락되었습니다.");
   }
 
+  const isAdmin = ADMIN_EMAILS.includes(email);
+
   // 사용자 존재 여부 확인
   let user = await prisma.user.findFirst({
     where: {
@@ -52,7 +55,8 @@ export async function handleGoogleAuth(input: GoogleAuthInput) {
         name,
         picture,
         googleId,
-        provider: 'google'
+        provider: 'google',
+        role: isAdmin ? 'ADMIN' : 'USER'
       }
     });
 
@@ -72,12 +76,13 @@ export async function handleGoogleAuth(input: GoogleAuthInput) {
       data: {
         name,
         picture,
-        lastLogin: new Date()
+        lastLogin: new Date(),
+        role: isAdmin ? 'ADMIN' : 'USER'  // 기존 사용자도 역할 업데이트
       }
     });
   }
 
-  // JWT 토큰 생성
+  // JWT 토큰 생성 (role 포함)
   const token = jwt.sign(
     {
       userId: user.id,
@@ -85,7 +90,8 @@ export async function handleGoogleAuth(input: GoogleAuthInput) {
       name: user.name,
       picture: user.picture,
       googleId: user.googleId,
-      provider: 'google'
+      provider: 'google',
+      role: user.role
     },
     process.env.JWT_SECRET || 'your-secret-key',
     { expiresIn: '7d' }
@@ -141,12 +147,14 @@ export async function handleKakaoAuth(input: KakaoAuthInput) {
     });
 
     const kakaoUser = userResponse.data;
+    const email = kakaoUser.kakao_account?.email;
+    const isAdmin = email && ADMIN_EMAILS.includes(email);
     
     // 3. 사용자 생성/업데이트
     let user = await prisma.user.findFirst({
       where: {
         OR: [
-          { email: kakaoUser.kakao_account?.email },
+          { email: email },
           { kakaoId: String(kakaoUser.id) }
         ]
       }
@@ -156,11 +164,12 @@ export async function handleKakaoAuth(input: KakaoAuthInput) {
       // 새 사용자 생성
       user = await prisma.user.create({
         data: {
-          email: kakaoUser.kakao_account?.email,
+          email: email,
           name: kakaoUser.properties?.nickname,
           picture: kakaoUser.properties?.profile_image,
           kakaoId: String(kakaoUser.id),
-          provider: 'kakao'
+          provider: 'kakao',
+          role: isAdmin ? 'ADMIN' : 'USER'
         }
       });
 
@@ -180,12 +189,13 @@ export async function handleKakaoAuth(input: KakaoAuthInput) {
         data: {
           name: kakaoUser.properties?.nickname,
           picture: kakaoUser.properties?.profile_image,
-          lastLogin: new Date()
+          lastLogin: new Date(),
+          role: isAdmin ? 'ADMIN' : 'USER'  // 기존 사용자도 역할 업데이트
         }
       });
     }
 
-    // JWT 토큰 생성
+    // JWT 토큰 생성 (role 포함)
     const token = jwt.sign(
       {
         userId: user.id,
@@ -193,7 +203,8 @@ export async function handleKakaoAuth(input: KakaoAuthInput) {
         name: user.name,
         picture: user.picture,
         kakaoId: user.kakaoId,
-        provider: 'kakao'
+        provider: 'kakao',
+        role: user.role
       },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '7d' }
@@ -237,15 +248,6 @@ export async function handleLogout(userId: string) {
         lastLogin: new Date() // 마지막 활동 시간 업데이트
       }
     });
-
-    // 추가로 로그아웃 로그를 기록하고 싶다면:
-    // await prisma.auditLog.create({
-    //   data: {
-    //     userId,
-    //     action: 'LOGOUT',
-    //     timestamp: new Date()
-    //   }
-    // });
 
     return {
       success: true,
@@ -315,7 +317,7 @@ export async function handleDeleteUser(userId: string) {
   }
 }
 
-// 토큰 검증 함수 (기존 middleware에서 사용 중이지만 서비스로도 제공)
+// 토큰 검증 함수
 export function verifyAuthToken(token: string) {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');

@@ -62,7 +62,12 @@ export const userResolvers = {
       return await prisma.userConsent.create({
         data: {
           userId: currentUser.id,
-          ...input
+          termsAccepted: input.termsAccepted,
+          privacyAccepted: input.privacyAccepted,
+          newsletterOptIn: input.newsletterOptIn,
+          termsVersion: input.termsVersion,
+          privacyVersion: input.privacyVersion,
+          newsletterVersion: input.newsletterVersion
         }
       });
     },

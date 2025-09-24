@@ -1,3 +1,37 @@
+-- CreateEnum
+CREATE TYPE "UserRole" AS ENUM ('USER', 'ADMIN');
+
+-- CreateTable
+CREATE TABLE "users" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "name" TEXT,
+    "role" "UserRole" NOT NULL DEFAULT 'USER',
+    "picture" TEXT,
+    "google_id" TEXT,
+    "kakaoId" TEXT,
+    "provider" TEXT NOT NULL DEFAULT 'google',
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "last_login" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "articles" (
+    "id" TEXT NOT NULL,
+    "trend_topic" TEXT NOT NULL,
+    "korean_article" TEXT NOT NULL,
+    "english_translation" TEXT NOT NULL,
+    "expression" TEXT NOT NULL,
+    "literal_translation" TEXT NOT NULL,
+    "idiomatic_translation" TEXT NOT NULL,
+    "reason" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "articles_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateTable
 CREATE TABLE "sessions" (
     "id" TEXT NOT NULL,
@@ -52,6 +86,7 @@ CREATE TABLE "feedback_analysis" (
     "fluency_score" DOUBLE PRECISION NOT NULL,
     "comprehension_score" DOUBLE PRECISION NOT NULL,
     "naturalness_score" DOUBLE PRECISION NOT NULL,
+    "interaction_score" DOUBLE PRECISION NOT NULL,
     "strengths" TEXT[],
     "improvements" TEXT[],
     "corrections" TEXT NOT NULL,
@@ -74,6 +109,15 @@ CREATE TABLE "newsletter_subscribers" (
 
     CONSTRAINT "newsletter_subscribers_pkey" PRIMARY KEY ("id")
 );
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_google_id_key" ON "users"("google_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_kakaoId_key" ON "users"("kakaoId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "user_stats_user_id_key" ON "user_stats"("user_id");

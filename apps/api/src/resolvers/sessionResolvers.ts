@@ -20,7 +20,7 @@ export const sessionResolvers = {
   FeedbackAnalysis: {
     corrections: (parent: any) => {
       try {
-        return JSON.parse(parent.corrections);
+        return JSON.parse(parent.corrections || '[]');
       } catch {
         return [];
       }
