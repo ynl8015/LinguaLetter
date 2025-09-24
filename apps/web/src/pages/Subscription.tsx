@@ -15,6 +15,8 @@ export default function Subscription() {
     e.preventDefault();
     if (!email || subscribing) return;
 
+    console.log('전송할 이메일:', email);
+
     try {
       const result = await subscribeNewsletter({
         variables: { email }

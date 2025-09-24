@@ -82,6 +82,14 @@ export const typeDefs = `#graphql
     content: String!
   }
 
+  type NewsletterSendResult implements Result {
+  success: Boolean!
+  error: String
+  message: String
+  count: Int
+  total: Int
+}
+
   # Input 타입들
   input NewsInput {
     trendTopic: String!
@@ -236,5 +244,8 @@ export const typeDefs = `#graphql
     
     # 사용자 통계 업데이트
     updateMyStats(messagesCount: Int!): UserStats!
+
+    # 뉴스레터 보내기
+    sendNewsletterToAllSubscribers(newsId: String!): NewsletterSendResult!
   }
 `;

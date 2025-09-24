@@ -194,6 +194,18 @@ export const SUBMIT_CONSENT = gql`
   }
 `;
 
+export const SEND_NEWSLETTER_TO_ALL = gql`
+  mutation SendNewsletterToAllSubscribers($newsId: String!) {
+    sendNewsletterToAllSubscribers(newsId: $newsId) {
+      success
+      error
+      message
+      count
+      total
+    }
+  }
+`;
+
 export const UPDATE_MY_STATS = gql`
   mutation UpdateMyStats($messagesCount: Int!) {
     updateMyStats(messagesCount: $messagesCount) {

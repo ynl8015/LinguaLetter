@@ -8,7 +8,8 @@ import {
   GENERATE_DAILY_NEWS, 
   CREATE_NEWS, 
   UPDATE_NEWS, 
-  DELETE_NEWS 
+  DELETE_NEWS,
+  SEND_NEWSLETTER_TO_ALL
 } from '../lib/apollo';
 
 interface NewsItem {
@@ -91,6 +92,7 @@ export default function NewsAdmin() {
   const [createNews, { loading: creating }] = useMutation(CREATE_NEWS);
   const [updateNews, { loading: updating }] = useMutation(UPDATE_NEWS);
   const [deleteNews, { loading: deleting }] = useMutation(DELETE_NEWS);
+  const [sendNewsletterToAll, { loading: sendingNewsletter }] = useMutation(SEND_NEWSLETTER_TO_ALL);
 
   const allNews: NewsItem[] = data?.allNews || [];
 
@@ -104,6 +106,28 @@ export default function NewsAdmin() {
     } catch (error: any) {
       console.error('뉴스 생성 실패:', error);
       alert(`뉴스 생성 실패: ${error.message}`);
+    }
+  };
+
+  const handleSendNewsletter = async (newsId: string, trendTopic: string) => {
+    if (!confirm(`"${trendTopic}" 뉴스를 모든 구독자에게 발송하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      const result = await sendNewsletterToAll({
+        variables: { newsId }
+      });
+
+      if (result.data?.sendNewsletterToAllSubscribers?.success) {
+        const { message, count, total } = result.data.sendNewsletterToAllSubscribers;
+        alert(`뉴스레터 발송 완료!\n${message}\n(성공: ${count}/${total})`);
+      } else {
+        alert(`뉴스레터 발송 실패: ${result.data?.sendNewsletterToAllSubscribers?.error}`);
+      }
+    } catch (error: any) {
+      console.error('뉴스레터 발송 오류:', error);
+      alert(`뉴스레터 발송 오류: ${error.message}`);
     }
   };
 
@@ -141,7 +165,6 @@ export default function NewsAdmin() {
   };
 
   const handleEdit = (news: NewsItem) => {
-
     let formattedDate = new Date().toISOString().slice(0, 16);
 
     try {
@@ -154,7 +177,6 @@ export default function NewsAdmin() {
     } catch (error) {
       console.log('날짜 파싱 오류:', error);
     }
-  
 
     setFormData({
       trendTopic: news.trendTopic,
@@ -305,6 +327,17 @@ export default function NewsAdmin() {
                   </div>
                   
                   <div className="flex space-x-3 ml-6">
+                    <button
+                      onClick={() => handleSendNewsletter(news.id, news.trendTopic)}
+                      disabled={sendingNewsletter}
+                      className="p-3 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-[12px] transition-all"
+                      title="구독자에게 뉴스레터 발송"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 7.89a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </button>
+                    
                     <button
                       onClick={() => handleEdit(news)}
                       className="p-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-[12px] transition-all"
