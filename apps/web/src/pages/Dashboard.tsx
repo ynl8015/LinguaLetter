@@ -6,6 +6,28 @@ import OverallFeedback from '../components/FeedbackChart';
 import { GET_MY_STATS, GET_MY_SESSIONS, GET_MY_FEEDBACKS } from '../lib/apollo';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 
+// 안전한 날짜 파싱 함수
+const formatDate = (dateString: string | null | undefined, options?: Intl.DateTimeFormatOptions): string => {
+  if (!dateString) return '정보 없음';
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return '정보 없음';
+    }
+    
+    const defaultOptions: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    };
+    
+    return date.toLocaleDateString('ko-KR', options || defaultOptions);
+  } catch {
+    return '정보 없음';
+  }
+};
+
 interface UserStats {
   id: number;
   userId: string;
@@ -260,7 +282,7 @@ export default function Dashboard() {
                 <h3 className="text-sm font-medium text-gray-600 mb-2">마지막 학습</h3>
                 <p className="text-lg font-bold text-gray-800">
                   {userStats.lastStudyDate 
-                    ? new Date(userStats.lastStudyDate).toLocaleDateString('ko-KR') 
+                    ? formatDate(userStats.lastStudyDate) 
                     : '없음'}
                 </p>
               </div>
@@ -309,7 +331,7 @@ export default function Dashboard() {
                           )}
                         </div>
                         <span className="text-gray-400 text-xs ml-4">
-                          {new Date(session.createdAt).toLocaleDateString('ko-KR', {
+                          {formatDate(session.createdAt, {
                             month: 'short',
                             day: 'numeric',
                             hour: '2-digit',
@@ -351,7 +373,7 @@ export default function Dashboard() {
                 <div>
                   <h2 className="text-2xl font-bold text-gray-800">상세 피드백</h2>
                   <p className="text-gray-600 mt-1">
-                    {new Date(selectedFeedback.createdAt).toLocaleDateString('ko-KR', {
+                    {formatDate(selectedFeedback.createdAt, {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',

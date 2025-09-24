@@ -11,9 +11,13 @@ export const sessionResolvers = {
       });
     },
     feedbackAnalysis: async (parent: any, _: any, { prisma }: Context) => {
-      return await prisma.feedbackAnalysis.findMany({
+      const results = await prisma.feedbackAnalysis.findMany({
         where: { sessionId: parent.id }
       });
+      return results.map(result => ({
+        ...result,
+        createdAt: result.createdAt.toISOString()
+      }));
     }
   },
 
@@ -31,9 +35,16 @@ export const sessionResolvers = {
       });
     },
     session: async (parent: any, _: any, { prisma }: Context) => {
-      return await prisma.session.findUnique({
+      const result = await prisma.session.findUnique({
         where: { id: parent.sessionId }
       });
+      if (result) {
+        return {
+          ...result,
+          createdAt: result.createdAt.toISOString()
+        };
+      }
+      return result;
     }
   },
 
