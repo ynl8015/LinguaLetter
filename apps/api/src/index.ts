@@ -8,6 +8,7 @@ import { resolvers } from './resolvers';
 import { createContext } from './middlewares/auth';
 import { confirmSubscription, unsubscribeNewsletter } from './services/newsletterService';
 import { handleGoogleAuth, handleKakaoAuth, completeRegistrationAfterConsent, refreshAccessToken } from './services/authService';
+import { startScheduler } from './services/schedulerService';
 import prisma from './db';
 import jwt from 'jsonwebtoken';
 
@@ -546,6 +547,10 @@ async function start() {
     console.log(`📊 GraphQL Playground: http://localhost:${port}/graphql`);
     console.log(`🔐 Auth endpoints: http://localhost:${port}/auth/*`);
     console.log(`📧 Newsletter endpoints: http://localhost:${port}/newsletter/*`);
+    
+  // 스케줄러 시작
+  startScheduler();
+  
   } catch (err) {
     app.log.error(err);
     process.exit(1);
