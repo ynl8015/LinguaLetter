@@ -679,7 +679,6 @@ export default function Teacher() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-[20px] max-w-md w-full p-8 shadow-2xl">
             <div className="text-center mb-6">
-              <div className="text-4xl mb-4">📝</div>
               <h3 className="text-2xl font-bold text-gray-800 mb-3">대화가 짧아요</h3>
               <div className="bg-gray-50 rounded-lg p-4 mb-4">
                 <p className="text-sm text-gray-600">

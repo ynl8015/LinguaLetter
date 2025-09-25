@@ -16,6 +16,8 @@ import AuthCallback from './pages/AuthCallback';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import NewsAdmin from './pages/NewsAdmin';
+import NewsletterConfirm from './pages/NewsletterConfirm';
+
 
 function App() {
   return (
@@ -35,6 +37,7 @@ function App() {
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/admin/news" element={<NewsAdmin />} />
+                <Route path="/newsletter/confirm/:token" element={<NewsletterConfirm />} />
               </Routes>
             </div>
           </Router>

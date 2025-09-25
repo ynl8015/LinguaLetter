@@ -149,7 +149,7 @@ async function sendConfirmationEmail(email: string, confirmToken: string) {
   }
 
   const transporter = createMailTransporter();
-  const confirmUrl = `http://localhost:4000/newsletter/confirm/${confirmToken}`;
+  const confirmUrl = `http://localhost:3000/newsletter/confirm/${confirmToken}`;
 
   await transporter.sendMail({
     from: `"LinguaLetter" <${process.env.EMAIL_USER}>`,
