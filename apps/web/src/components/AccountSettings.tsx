@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { deleteAccount } from '../services/authService';
+import { useMutation } from '@apollo/client';
+import { DELETE_ACCOUNT } from '../graphql/apollo';
 
 export default function AccountSettings() {
   const { user, logout } = useAuth();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteAccount] = useMutation(DELETE_ACCOUNT);
 
   if (!user) return null;
 
@@ -16,12 +18,18 @@ export default function AccountSettings() {
 
     setIsDeleting(true);
     try {
-      await deleteAccount();
-      alert('계정이 성공적으로 삭제되었습니다.');
-      await logout();
-      window.location.href = '/';
+      const result = await deleteAccount();
+      
+      if (result.data?.deleteAccount?.success) {
+        alert(result.data.deleteAccount.message || '계정이 성공적으로 삭제되었습니다.');
+        await logout();
+        window.location.href = '/';
+      } else {
+        alert(result.data?.deleteAccount?.message || '계정 삭제에 실패했습니다.');
+      }
     } catch (error: any) {
-      alert(error.message);
+      console.error('Delete account error:', error);
+      alert(error.message || '계정 삭제 중 오류가 발생했습니다.');
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirm(false);

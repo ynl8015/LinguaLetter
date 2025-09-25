@@ -1,3 +1,4 @@
+// services/authService.ts
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
 import prisma from '../db';
@@ -6,6 +7,10 @@ const TERMS_VERSION = process.env.TERMS_VERSION || "1.0.0";
 const PRIVACY_VERSION = process.env.PRIVACY_VERSION || "1.0.0";
 const NEWSLETTER_VERSION = process.env.NEWSLETTER_VERSION || "1.0.0";
 const ADMIN_EMAILS = ['yuunalee1050@gmail.com'];
+
+// JWT 토큰 만료 시간을 짧게 설정 (2시간)
+const JWT_SHORT_EXPIRY = '2h';
+const JWT_REFRESH_EXPIRY = '7d';
 
 export interface GoogleAuthInput {
   googleToken: string;
@@ -20,12 +25,24 @@ export interface KakaoAuthInput {
   redirectUri: string;
 }
 
-function computeConsentsRequired(latest: any | null): boolean {
-  if (!latest) return true;
-  if (!latest.termsAccepted || !latest.privacyAccepted) return true;
-  if (latest.termsVersion !== TERMS_VERSION) return true;
-  if (latest.privacyVersion !== PRIVACY_VERSION) return true;
-  return false;
+// 동의서 상태 체크 함수
+function checkConsentStatus(latestConsent: any | null): { isValid: boolean; required: boolean } {
+  if (!latestConsent) {
+    return { isValid: false, required: true };
+  }
+  
+  // 필수 동의 체크
+  if (!latestConsent.termsAccepted || !latestConsent.privacyAccepted) {
+    return { isValid: false, required: true };
+  }
+  
+  // 버전 체크
+  if (latestConsent.termsVersion !== TERMS_VERSION || 
+      latestConsent.privacyVersion !== PRIVACY_VERSION) {
+    return { isValid: false, required: true };
+  }
+  
+  return { isValid: true, required: false };
 }
 
 export async function handleGoogleAuth(input: GoogleAuthInput) {
@@ -37,7 +54,7 @@ export async function handleGoogleAuth(input: GoogleAuthInput) {
 
   const isAdmin = ADMIN_EMAILS.includes(email);
 
-  // 사용자 존재 여부 확인
+  // 1. 사용자 존재 여부 확인
   let user = await prisma.user.findFirst({
     where: {
       OR: [
@@ -47,16 +64,17 @@ export async function handleGoogleAuth(input: GoogleAuthInput) {
     }
   });
 
+  let isNewUser = false;
+
   if (!user) {
-    // 새 사용자 생성 전에 이전 계정의 블랙리스트 정리 (같은 이메일로 재가입하는 경우)
+    // 새 사용자 생성 (회원가입)
+    isNewUser = true;
+    
+    // 이전 계정의 블랙리스트 정리 (같은 이메일로 재가입하는 경우)
     if (email) {
-      // 이메일로 이전에 무효화된 토큰들 찾아서 정리
       const oldInvalidatedTokens = await prisma.invalidatedToken.findMany({
         where: {
-          OR: [
-            { expiresAt: { lt: new Date() } }, // 만료된 토큰들
-            // 같은 이메일로 재가입하는 경우를 위해 추가 정리 로직은 생략 (userId가 다르므로)
-          ]
+          expiresAt: { lt: new Date() } // 만료된 토큰들
         }
       });
       
@@ -68,8 +86,7 @@ export async function handleGoogleAuth(input: GoogleAuthInput) {
         });
       }
     }
-
-    // 새 사용자 생성
+    
     user = await prisma.user.create({
       data: {
         email,
@@ -98,13 +115,55 @@ export async function handleGoogleAuth(input: GoogleAuthInput) {
         name,
         picture,
         lastLogin: new Date(),
-        role: isAdmin ? 'ADMIN' : 'USER'  // 기존 사용자도 역할 업데이트
+        role: isAdmin ? 'ADMIN' : 'USER'
       }
     });
   }
 
-  // JWT 토큰 생성 (role 포함)
-  const token = jwt.sign(
+  // 2. 동의서 상태 확인
+  const latestConsent = await prisma.userConsent.findFirst({
+    where: { userId: user.id },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  const consentStatus = checkConsentStatus(latestConsent);
+
+  // 3. 동의서가 없거나 무효한 경우 임시 토큰 발급
+  if (!consentStatus.isValid) {
+    const tempToken = jwt.sign(
+      {
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+        picture: user.picture,
+        googleId: user.googleId,
+        provider: 'google',
+        role: user.role,
+        type: 'temp' // 임시 토큰 표시
+      },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '30m' } // 임시 토큰은 30분만 유효
+    );
+
+    return {
+      success: true,
+      token: tempToken,
+      user,
+      status: 'CONSENT_REQUIRED',
+      consents: {
+        required: true,
+        currentVersions: {
+          terms: TERMS_VERSION,
+          privacy: PRIVACY_VERSION,
+          newsletter: NEWSLETTER_VERSION,
+        },
+        latest: latestConsent,
+      }
+    };
+  }
+
+  // 4. 정상 로그인 토큰 발급
+  const accessToken = jwt.sign(
     {
       userId: user.id,
       email: user.email,
@@ -112,26 +171,30 @@ export async function handleGoogleAuth(input: GoogleAuthInput) {
       picture: user.picture,
       googleId: user.googleId,
       provider: 'google',
-      role: user.role
+      role: user.role,
+      type: 'access'
     },
     process.env.JWT_SECRET || 'your-secret-key',
-    { expiresIn: '7d' }
+    { expiresIn: JWT_SHORT_EXPIRY }
   );
 
-  // 최신 동의 상태 조회
-  const latestConsent = await prisma.userConsent.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: 'desc' }
-  });
-
-  const consentsRequired = computeConsentsRequired(latestConsent);
+  const refreshToken = jwt.sign(
+    {
+      userId: user.id,
+      type: 'refresh'
+    },
+    process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
+    { expiresIn: JWT_REFRESH_EXPIRY }
+  );
 
   return {
     success: true,
-    token,
+    token: accessToken,
+    refreshToken,
     user,
+    status: 'SUCCESS',
     consents: {
-      required: consentsRequired,
+      required: false,
       currentVersions: {
         terms: TERMS_VERSION,
         privacy: PRIVACY_VERSION,
@@ -186,7 +249,7 @@ export async function handleKakaoAuth(input: KakaoAuthInput) {
       if (email) {
         const oldInvalidatedTokens = await prisma.invalidatedToken.findMany({
           where: {
-            expiresAt: { lt: new Date() } // 만료된 토큰들 정리
+            expiresAt: { lt: new Date() }
           }
         });
         
@@ -199,7 +262,6 @@ export async function handleKakaoAuth(input: KakaoAuthInput) {
         }
       }
 
-      // 새 사용자 생성
       user = await prisma.user.create({
         data: {
           email: email,
@@ -211,7 +273,6 @@ export async function handleKakaoAuth(input: KakaoAuthInput) {
         }
       });
 
-      // 사용자 통계 초기화
       await prisma.userStats.create({
         data: { 
           userId: user.id, 
@@ -221,20 +282,59 @@ export async function handleKakaoAuth(input: KakaoAuthInput) {
         }
       });
     } else {
-      // 기존 사용자 정보 업데이트
       user = await prisma.user.update({
         where: { id: user.id },
         data: {
           name: kakaoUser.properties?.nickname,
           picture: kakaoUser.properties?.profile_image,
           lastLogin: new Date(),
-          role: isAdmin ? 'ADMIN' : 'USER'  // 기존 사용자도 역할 업데이트
+          role: isAdmin ? 'ADMIN' : 'USER'
         }
       });
     }
 
-    // JWT 토큰 생성 (role 포함)
-    const token = jwt.sign(
+    // 동의서 상태 확인 후 토큰 발급 (Google과 동일한 로직)
+    const latestConsent = await prisma.userConsent.findFirst({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const consentStatus = checkConsentStatus(latestConsent);
+
+    if (!consentStatus.isValid) {
+      const tempToken = jwt.sign(
+        {
+          userId: user.id,
+          email: user.email,
+          name: user.name,
+          picture: user.picture,
+          kakaoId: user.kakaoId,
+          provider: 'kakao',
+          role: user.role,
+          type: 'temp'
+        },
+        process.env.JWT_SECRET || 'your-secret-key',
+        { expiresIn: '30m' }
+      );
+
+      return {
+        success: true,
+        token: tempToken,
+        user,
+        status: 'CONSENT_REQUIRED',
+        consents: {
+          required: true,
+          currentVersions: {
+            terms: TERMS_VERSION,
+            privacy: PRIVACY_VERSION,
+            newsletter: NEWSLETTER_VERSION,
+          },
+          latest: latestConsent,
+        }
+      };
+    }
+
+    const accessToken = jwt.sign(
       {
         userId: user.id,
         email: user.email,
@@ -242,26 +342,30 @@ export async function handleKakaoAuth(input: KakaoAuthInput) {
         picture: user.picture,
         kakaoId: user.kakaoId,
         provider: 'kakao',
-        role: user.role
+        role: user.role,
+        type: 'access'
       },
       process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '7d' }
+      { expiresIn: JWT_SHORT_EXPIRY }
     );
 
-    // 최신 동의 상태 조회
-    const latestConsent = await prisma.userConsent.findFirst({
-      where: { userId: user.id },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    const consentsRequired = computeConsentsRequired(latestConsent);
+    const refreshToken = jwt.sign(
+      {
+        userId: user.id,
+        type: 'refresh'
+      },
+      process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
+      { expiresIn: JWT_REFRESH_EXPIRY }
+    );
 
     return { 
       success: true, 
-      token, 
+      token: accessToken,
+      refreshToken,
       user,
+      status: 'SUCCESS',
       consents: {
-        required: consentsRequired,
+        required: false,
         currentVersions: {
           terms: TERMS_VERSION,
           privacy: PRIVACY_VERSION,
@@ -276,14 +380,119 @@ export async function handleKakaoAuth(input: KakaoAuthInput) {
   }
 }
 
+// 동의서 제출 후 정식 로그인 처리
+export async function completeRegistrationAfterConsent(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId }
+  });
+
+  if (!user) {
+    throw new Error('사용자를 찾을 수 없습니다.');
+  }
+
+  // 동의서 재확인
+  const latestConsent = await prisma.userConsent.findFirst({
+    where: { userId: user.id },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  const consentStatus = checkConsentStatus(latestConsent);
+
+  if (!consentStatus.isValid) {
+    throw new Error('동의서가 완료되지 않았습니다.');
+  }
+
+  // 정식 토큰 발급
+  const accessToken = jwt.sign(
+    {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      picture: user.picture,
+      role: user.role,
+      type: 'access'
+    },
+    process.env.JWT_SECRET || 'your-secret-key',
+    { expiresIn: JWT_SHORT_EXPIRY }
+  );
+
+  const refreshToken = jwt.sign(
+    {
+      userId: user.id,
+      type: 'refresh'
+    },
+    process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
+    { expiresIn: JWT_REFRESH_EXPIRY }
+  );
+
+  return {
+    success: true,
+    token: accessToken,
+    refreshToken,
+    user
+  };
+}
+
+// 토큰 갱신
+export async function refreshAccessToken(refreshToken: string) {
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || 'your-refresh-secret') as any;
+    
+    if (decoded.type !== 'refresh') {
+      throw new Error('Invalid token type');
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId }
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // 동의서 상태 재확인
+    const latestConsent = await prisma.userConsent.findFirst({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const consentStatus = checkConsentStatus(latestConsent);
+
+    if (!consentStatus.isValid) {
+      throw new Error('Consent expired or invalid');
+    }
+
+    // 새 액세스 토큰 발급
+    const newAccessToken = jwt.sign(
+      {
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+        picture: user.picture,
+        role: user.role,
+        type: 'access'
+      },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: JWT_SHORT_EXPIRY }
+    );
+
+    return {
+      success: true,
+      token: newAccessToken,
+      user
+    };
+  } catch (error) {
+    throw new Error('Invalid or expired refresh token');
+  }
+}
+
 // 로그아웃 함수
 export async function handleLogout(userId: string) {
   try {
-    // 로그아웃 시간 기록
     await prisma.user.update({
       where: { id: userId },
       data: {
-        lastLogin: new Date() // 마지막 활동 시간 업데이트
+        lastLogin: new Date()
       }
     });
 
@@ -297,10 +506,9 @@ export async function handleLogout(userId: string) {
   }
 }
 
-// 사용자 탈퇴 함수
+// 사용자 탈퇴 함수 (동의서 포함 모든 데이터 삭제)
 export async function handleDeleteUser(userId: string) {
   try {
-    // 사용자 존재 여부 확인
     const user = await prisma.user.findUnique({
       where: { id: userId }
     });
@@ -321,7 +529,7 @@ export async function handleDeleteUser(userId: string) {
         where: { userId }
       });
 
-      // 3. 사용자 동의 데이터 삭제
+      // 3. 사용자 동의 데이터 삭제 (중요!)
       await tx.userConsent.deleteMany({
         where: { userId }
       });
@@ -331,7 +539,7 @@ export async function handleDeleteUser(userId: string) {
         where: { userId }
       });
 
-      // 5. 뉴스레터 구독 해지 (이메일 기반)
+      // 5. 뉴스레터 구독 해지
       if (user.email) {
         await tx.newsletterSubscriber.updateMany({
           where: { email: user.email },
@@ -342,6 +550,16 @@ export async function handleDeleteUser(userId: string) {
       // 6. 최종적으로 사용자 계정 삭제
       await tx.user.delete({
         where: { id: userId }
+      });
+
+      // 7. 해당 사용자의 모든 토큰 무효화
+      await tx.invalidatedToken.create({
+        data: {
+          userId: userId,
+          tokenId: `${userId}_delete_${Date.now()}`,
+          reason: 'account_deleted',
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7일 후
+        }
       });
     });
 
@@ -355,12 +573,96 @@ export async function handleDeleteUser(userId: string) {
   }
 }
 
-// 토큰 검증 함수
-export function verifyAuthToken(token: string) {
+// 토큰 검증 함수 (동의서 상태도 함께 확인)
+export async function verifyAuthToken(token: string) {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-    return { valid: true, decoded };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+    
+    // 임시 토큰인 경우 제한적 접근만 허용
+    if (decoded.type === 'temp') {
+      return { 
+        valid: true, 
+        decoded, 
+        status: 'TEMP',
+        message: '동의서 작성이 필요합니다.' 
+      };
+    }
+
+    // 사용자 존재 확인
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId }
+    });
+
+    if (!user) {
+      return { 
+        valid: false, 
+        error: 'User not found - account may have been deleted' 
+      };
+    }
+
+    // 동의서 상태 확인
+    const latestConsent = await prisma.userConsent.findFirst({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const consentStatus = checkConsentStatus(latestConsent);
+
+    if (!consentStatus.isValid) {
+      return { 
+        valid: false, 
+        error: 'Consent not found or expired - please login again' 
+      };
+    }
+
+    return { 
+      valid: true, 
+      decoded, 
+      status: 'VALID',
+      user 
+    };
   } catch (error) {
-    return { valid: false, error: 'Invalid or expired token' };
+    return { 
+      valid: false, 
+      error: 'Invalid or expired token' 
+    };
   }
+}
+
+// 세션 활성화 체크를 위한 함수
+export function createSessionActivityChecker() {
+  const activeUsers = new Map();
+  
+  const recordActivity = (userId: string) => {
+    activeUsers.set(userId, Date.now());
+  };
+  
+  const cleanupInactiveSessions = async () => {
+    const now = Date.now();
+    const inactiveThreshold = 30 * 60 * 1000; // 30분
+    
+    for (const [userId, lastActivity] of activeUsers.entries()) {
+      if (now - lastActivity > inactiveThreshold) {
+        activeUsers.delete(userId);
+        
+        try {
+          await prisma.invalidatedToken.create({
+            data: {
+              userId: userId,
+              tokenId: `${userId}_inactive_${now}`,
+              reason: 'session_timeout',
+              expiresAt: new Date(now + 24 * 60 * 60 * 1000)
+            }
+          });
+        } catch (error) {
+          console.error('Failed to record inactive session:', error);
+        }
+      }
+    }
+  };
+  
+  // 10분마다 정리 작업 실행
+  setInterval(cleanupInactiveSessions, 10 * 60 * 1000);
+  
+  return { recordActivity, cleanupInactiveSessions };
 }

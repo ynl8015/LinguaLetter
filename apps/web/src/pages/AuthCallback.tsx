@@ -1,74 +1,51 @@
+// AuthCallback.tsx - 카카오 로그인 콜백 전용
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { jwtDecode } from 'jwt-decode';
 
 export default function AuthCallback() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { login, refetchUser } = useAuth();
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const token = urlParams.get('token');
     const error = urlParams.get('error');
-    const consentsRequired = urlParams.get('consentsRequired') === 'true';
+    const status = urlParams.get('status');
 
-    // 에러 처리 추가
+    console.log('AuthCallback - 받은 파라미터:', { token: !!token, error, status });
+
+    // 에러 처리
     if (error) {
-      console.error('인증 오류:', decodeURIComponent(error));
-      navigate('/login?error=auth_failed');
+      console.error('카카오 인증 오류:', decodeURIComponent(error));
+      navigate('/login?error=' + encodeURIComponent(error));
       return;
     }
 
-    if (token) {
-      localStorage.setItem('token', token);
-      
-      try {
-        const decoded = jwtDecode(token);
-        console.log('Decoded:', decoded); // 구조 확인용
-        
-        const userData = {
-          id: decoded.userId || decoded.sub,
-          email: decoded.email,
-          name: decoded.name,
-          role: decoded.role,
-          provider: decoded.provider || 'google',
-          picture: decoded.picture,
-          createdAt: new Date().toISOString(),
-          lastLogin: new Date().toISOString()
-        };
-        
-        login(userData, token);
-        
-        // 동의서가 필요한 경우 동의서 페이지로, 아니면 대시보드로
-        if (consentsRequired) {
-          navigate('/terms-consent');
-        } else {
-          navigate('/dashboard');
-        }
-      } catch (error) {
-        console.error('토큰 디코딩 실패:', error);
-        // 디코딩 실패시 기존 방식 사용
-        refetchUser();
-        setTimeout(() => {
-          if (consentsRequired) {
-            navigate('/terms-consent');
-          } else {
-            navigate('/dashboard');
-          }
-        }, 1000); // 약간의 지연
+    // 카카오 로그인 콜백 처리
+    if (token && status) {
+      if (status === 'CONSENT_REQUIRED') {
+        // 동의서가 필요한 경우
+        localStorage.setItem('kakaoTempToken', token);
+        localStorage.setItem('kakaoAuthStatus', status);
+        navigate('/login?kakao_consent=true');
+      } else if (status === 'SUCCESS') {
+        // 로그인 성공한 경우
+        localStorage.setItem('token', token);
+        localStorage.setItem('kakaoAuthStatus', 'SUCCESS');
+        window.location.href = '/dashboard'; // 완전 새로고침
+      } else {
+        navigate('/login?error=unknown_status');
       }
     } else {
-      navigate('/login?error=no_token');
+      navigate('/login?error=invalid_callback');
     }
-  }, [location, login, navigate, refetchUser]);
+  }, [location, navigate]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex items-center justify-center min-h-screen bg-white">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-        <p className="mt-4 text-gray-600">로그인 처리 중...</p>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto mb-4"></div>
+        <p className="text-gray-600">카카오 로그인 처리 중...</p>
       </div>
     </div>
   );
