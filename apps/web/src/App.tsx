@@ -17,6 +17,7 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import NewsAdmin from './pages/NewsAdmin';
 import NewsletterConfirm from './pages/NewsletterConfirm';
+import NewsletterUnsubscribe from './pages/NewsletterUnsubscribe';
 
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/admin/news" element={<NewsAdmin />} />
                 <Route path="/newsletter/confirm/:token" element={<NewsletterConfirm />} />
+                <Route path="/newsletter/unsubscribe" element={<NewsletterUnsubscribe/>}/>
               </Routes>
             </div>
           </Router>

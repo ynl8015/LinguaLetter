@@ -84,28 +84,29 @@ export default function SubscriptionManager() {
     }
   };
 
-  const handleUnsubscribe = async () => {
-    if (!user.email || !confirm('정말 구독을 해지하시겠습니까?')) return;
-    
-    setIsChanging(true);
-    try {
-      const result = await unsubscribeNewsletter({
-        variables: { email: user.email }
-      });
 
-      if (result.data?.unsubscribeNewsletter?.success) {
-        alert('구독이 해지되었습니다.');
-        refetch();
-      } else {
-        alert(result.data?.unsubscribeNewsletter?.error || '구독 해지 중 오류가 발생했습니다.');
-      }
-    } catch (error) {
-      console.error('구독 해지 오류:', error);
-      alert('구독 해지 중 오류가 발생했습니다.');
-    } finally {
-      setIsChanging(false);
+  const handleUnsubscribe = async () => {
+  if (!user.email || !confirm('정말 구독을 해지하시겠습니까?')) return;
+  
+  setIsChanging(true);
+  try {
+    const result = await unsubscribeNewsletter({
+      variables: { email: user.email }
+    });
+
+    if (result.data?.unsubscribeNewsletter?.success) {
+      alert('구독이 해지되었습니다.');
+      refetch();
+    } else {
+      alert(result.data?.unsubscribeNewsletter?.error || '구독 해지 중 오류가 발생했습니다.');
     }
-  };
+  } catch (error) {
+    console.error('구독 해지 오류:', error);
+    alert('구독 해지 중 오류가 발생했습니다.');
+  } finally {
+    setIsChanging(false);
+  }
+};
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '정보 없음';

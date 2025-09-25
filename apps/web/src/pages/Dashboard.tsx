@@ -130,31 +130,58 @@ export default function Dashboard() {
     date: new Date(feedback.createdAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
   }));
 
-  const handleSubscriptionToggle = async () => {
-    if (!user?.email) return;
-    
-    try {
-      if (subscriptionStatus?.isSubscribed) {
-        const result = await unsubscribeNewsletter({
-          variables: { email: user.email }
-        });
-        if (result.data?.unsubscribeNewsletter?.success) {
-          alert('구독이 해지되었습니다.');
-        }
+const handleSubscriptionToggle = async () => {
+  console.log('🖱️ handleSubscriptionToggle 호출됨');
+  console.log('👤 user?.email:', user?.email);
+  console.log('📊 subscriptionStatus:', subscriptionStatus);
+  
+  if (!user?.email) {
+    console.log('❌ user.email이 없어서 함수 종료');
+    return;
+  }
+  
+  try {
+    if (subscriptionStatus?.isSubscribed) {
+      console.log('🔴 구독 해지 시도');
+      const result = await unsubscribeNewsletter({
+        variables: { email: user.email }
+      });
+      
+      console.log('📨 unsubscribe 결과:', result);
+      
+      if (result.data?.unsubscribeNewsletter?.success) {
+        alert('구독이 해지되었습니다.');
+        console.log('✅ 구독 해지 성공, refetch 호출');
       } else {
-        const result = await subscribeNewsletter({
-          variables: { email: user.email }
-        });
-        if (result.data?.subscribeNewsletter?.success) {
-          alert('구독 확인 이메일이 발송되었습니다.');
-        }
+        console.log('❌ 구독 해지 실패:', result.data?.unsubscribeNewsletter);
+        alert(result.data?.unsubscribeNewsletter?.error || '구독 해지 실패');
       }
-      refetchSubscription();
-    } catch (error) {
-      console.error('Subscription error:', error);
-      alert('처리 중 오류가 발생했습니다.');
+    } else {
+      console.log('🔵 구독 신청 시도');
+      const result = await subscribeNewsletter({
+        variables: { email: user.email }
+      });
+      
+      console.log('📨 subscribe 결과:', result);
+      
+      if (result.data?.subscribeNewsletter?.success) {
+        alert('구독 확인 이메일이 발송되었습니다.');
+        console.log('✅ 구독 신청 성공, refetch 호출');
+      } else {
+        console.log('❌ 구독 신청 실패:', result.data?.subscribeNewsletter);
+        alert(result.data?.subscribeNewsletter?.error || '구독 신청 실패');
+      }
     }
-  };
+    
+    // refetch 함수 호출
+    console.log('🔄 refetchSubscription 호출');
+    refetchSubscription();
+    
+  } catch (error) {
+    console.error('💥 Subscription error:', error);
+    alert('처리 중 오류가 발생했습니다.');
+  }
+};
 
   const handleDeleteAccount = async () => {
     if (!user) return;

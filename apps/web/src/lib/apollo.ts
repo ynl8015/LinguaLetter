@@ -293,6 +293,16 @@ export const SUBSCRIBE_NEWSLETTER = gql`
   }
 `;
 
+export const CONFIRM_SUBSCRIPTION = gql`
+  mutation ConfirmSubscription($token: String!) {
+    confirmSubscription(token: $token) {
+      success
+      error
+      message
+    }
+  }
+`;
+
 export const UNSUBSCRIBE_NEWSLETTER = gql`
   mutation UnsubscribeNewsletter($email: String!) {
     unsubscribeNewsletter(email: $email) {

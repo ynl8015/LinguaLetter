@@ -50,10 +50,10 @@ export const typeDefs = `#graphql
   }
   
   type Correction {
-  original: String
-  corrected: String
-  reason: String
-}
+    original: String
+    corrected: String
+    reason: String
+  }
   
   type FeedbackAnalysis {
     id: Int!
@@ -83,12 +83,12 @@ export const typeDefs = `#graphql
   }
 
   type NewsletterSendResult implements Result {
-  success: Boolean!
-  error: String
-  message: String
-  count: Int
-  total: Int
-}
+    success: Boolean!
+    error: String
+    message: String
+    count: Int
+    total: Int
+  }
 
   # Input 타입들
   input NewsInput {
@@ -142,10 +142,11 @@ export const typeDefs = `#graphql
     USER
     ADMIN
   }
-    enum TeacherType {
-     emma
-     steve
-   }
+  
+  enum TeacherType {
+    emma
+    steve
+  }
 
   # 결과 타입들
   interface Result {
@@ -262,6 +263,7 @@ export const typeDefs = `#graphql
     
     # 뉴스레터
     subscribeNewsletter(email: String!): SubscriptionResult!
+    confirmSubscription(token: String!): SubscriptionResult!  # 새로 추가
     unsubscribeNewsletter(email: String!): UnsubscribeResult!
     unsubscribeByToken(token: String!): UnsubscribeResult!
     

@@ -2,9 +2,9 @@ import nodemailer from 'nodemailer';
 import prisma from '../db';
 
 /**
- * 이메일 전송을 위한 Transporter를 생성합니다.
+ * 이메일 전송을 위한 Transport를 생성합니다.
  */
-const createMailTransporter = () => {
+const createMailTransport = () => {
   return nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -106,12 +106,14 @@ export async function sendNewsletterToAllSubscribers(newsId: string) {
       throw new Error('이메일 환경변수가 설정되지 않았습니다.');
     }
 
-    const transporter = createMailTransporter();
+    const transporter = createMailTransport();
     let successCount = 0;
 
     for (const subscriber of subscribers) {
       try {
-        const unsubscribeUrl = `http://localhost:4000/newsletter/unsubscribe/${subscriber.unsubscribeToken}`;
+        // 프론트엔드 GraphQL 페이지로 변경 (REST API 대신)
+        const unsubscribeUrl = `http://localhost:3000/newsletter/unsubscribe/${subscriber.unsubscribeToken}`;
+        
         await transporter.sendMail({
           from: `"LinguaLetter" <${process.env.EMAIL_USER}>`,
           to: subscriber.email,
@@ -148,7 +150,7 @@ async function sendConfirmationEmail(email: string, confirmToken: string) {
     throw new Error('이메일 환경변수가 설정되지 않았습니다.');
   }
 
-  const transporter = createMailTransporter();
+  const transporter = createMailTransport();
   const confirmUrl = `http://localhost:3000/newsletter/confirm/${confirmToken}`;
 
   await transporter.sendMail({
@@ -197,7 +199,7 @@ function createConfirmationTemplate(confirmUrl: string) {
 }
 
 /**
- * 구독 해지
+ * 구독 해지 (토큰으로)
  */
 export async function unsubscribeNewsletter(token: string) {
   const subscriber = await prisma.newsletterSubscriber.findUnique({
@@ -215,8 +217,7 @@ export async function unsubscribeNewsletter(token: string) {
   await prisma.newsletterSubscriber.update({
     where: { unsubscribeToken: token },
     data: {
-      isActive: false,
-      unsubscribedAt: new Date()
+      isActive: false
     }
   });
 
@@ -257,8 +258,7 @@ export async function unsubscribeByEmail(email: string) {
   await prisma.newsletterSubscriber.update({
     where: { email },
     data: {
-      isActive: false,
-      unsubscribedAt: new Date()
+      isActive: false
     }
   });
 
@@ -268,7 +268,7 @@ export async function unsubscribeByEmail(email: string) {
 /**
  * 뉴스레터 이메일 템플릿
  */
-function createNewsletterTemplate(news, unsubscribeUrl) {
+function createNewsletterTemplate(news: any, unsubscribeUrl: string) {
   return `
   <!DOCTYPE html>
   <html lang="ko">
@@ -319,8 +319,8 @@ function createNewsletterTemplate(news, unsubscribeUrl) {
       <p>${news.reason}</p>
 
       <div style="text-align:center;">
-  <a href="http://localhost:3000/teacher" class="cta-btn"> 이 주제로 선생님과 대화해보기</a>
-</div>
+        <a href="http://localhost:3000/teacher" class="cta-btn">이 주제로 선생님과 대화해보기</a>
+      </div>
 
       <div class="footer">
         <a href="${unsubscribeUrl}">구독 해지</a><br/><br/>

@@ -1,4 +1,11 @@
-import { subscribeNewsletter, sendNewsletterToAllSubscribers, getUserSubscriptionStatus, unsubscribeByEmail, unsubscribeNewsletter } from '../services/newsletterService';
+import { 
+  subscribeNewsletter, 
+  confirmSubscription,
+  sendNewsletterToAllSubscribers, 
+  getUserSubscriptionStatus, 
+  unsubscribeByEmail, 
+  unsubscribeNewsletter 
+} from '../services/newsletterService';
 import { requireAuth } from '../middlewares/auth';
 
 export const newsletterResolvers = {
@@ -17,6 +24,18 @@ export const newsletterResolvers = {
         return {
           success: false,
           error: error.message
+        };
+      }
+    },
+
+    // 구독 확인 뮤테이션 추가
+    confirmSubscription: async (_: any, { token }: { token: string }) => {
+      try {
+        return await confirmSubscription(token);
+      } catch (error: any) {
+        return {
+          success: false,
+          message: error.message
         };
       }
     },
@@ -42,7 +61,7 @@ export const newsletterResolvers = {
       } catch (error: any) {
         return {
           success: false,
-          error: error.message
+          message: error.message
         };
       }
     },
