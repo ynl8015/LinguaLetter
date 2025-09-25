@@ -18,6 +18,7 @@ export interface ChatMessage {
 export interface Context {
   user?: User;
   prisma: any;
+  request?: any;
 }
 
 export interface AuthPayload {
@@ -26,7 +27,11 @@ export interface AuthPayload {
   name?: string;
   picture?: string;
   googleId?: string;
+  kakaoId?: string;
   provider: string;
+  role?: string;
+  iat?: number;
+  exp?: number;
 }
 
 export enum TeacherType {

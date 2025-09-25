@@ -48,6 +48,27 @@ export async function handleGoogleAuth(input: GoogleAuthInput) {
   });
 
   if (!user) {
+    // 새 사용자 생성 전에 이전 계정의 블랙리스트 정리 (같은 이메일로 재가입하는 경우)
+    if (email) {
+      // 이메일로 이전에 무효화된 토큰들 찾아서 정리
+      const oldInvalidatedTokens = await prisma.invalidatedToken.findMany({
+        where: {
+          OR: [
+            { expiresAt: { lt: new Date() } }, // 만료된 토큰들
+            // 같은 이메일로 재가입하는 경우를 위해 추가 정리 로직은 생략 (userId가 다르므로)
+          ]
+        }
+      });
+      
+      if (oldInvalidatedTokens.length > 0) {
+        await prisma.invalidatedToken.deleteMany({
+          where: {
+            id: { in: oldInvalidatedTokens.map(t => t.id) }
+          }
+        });
+      }
+    }
+
     // 새 사용자 생성
     user = await prisma.user.create({
       data: {
@@ -161,6 +182,23 @@ export async function handleKakaoAuth(input: KakaoAuthInput) {
     });
 
     if (!user) {
+      // 새 사용자 생성 전에 이전 계정의 블랙리스트 정리
+      if (email) {
+        const oldInvalidatedTokens = await prisma.invalidatedToken.findMany({
+          where: {
+            expiresAt: { lt: new Date() } // 만료된 토큰들 정리
+          }
+        });
+        
+        if (oldInvalidatedTokens.length > 0) {
+          await prisma.invalidatedToken.deleteMany({
+            where: {
+              id: { in: oldInvalidatedTokens.map(t => t.id) }
+            }
+          });
+        }
+      }
+
       // 새 사용자 생성
       user = await prisma.user.create({
         data: {

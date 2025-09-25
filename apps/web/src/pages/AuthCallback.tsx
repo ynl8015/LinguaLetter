@@ -12,6 +12,7 @@ export default function AuthCallback() {
     const urlParams = new URLSearchParams(location.search);
     const token = urlParams.get('token');
     const error = urlParams.get('error');
+    const consentsRequired = urlParams.get('consentsRequired') === 'true';
 
     // 에러 처리 추가
     if (error) {
@@ -39,12 +40,24 @@ export default function AuthCallback() {
         };
         
         login(userData, token);
-        navigate('/dashboard');
+        
+        // 동의서가 필요한 경우 동의서 페이지로, 아니면 대시보드로
+        if (consentsRequired) {
+          navigate('/terms-consent');
+        } else {
+          navigate('/dashboard');
+        }
       } catch (error) {
         console.error('토큰 디코딩 실패:', error);
         // 디코딩 실패시 기존 방식 사용
         refetchUser();
-        setTimeout(() => navigate('/dashboard'), 1000); // 약간의 지연
+        setTimeout(() => {
+          if (consentsRequired) {
+            navigate('/terms-consent');
+          } else {
+            navigate('/dashboard');
+          }
+        }, 1000); // 약간의 지연
       }
     } else {
       navigate('/login?error=no_token');

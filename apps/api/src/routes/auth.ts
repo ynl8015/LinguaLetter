@@ -29,9 +29,14 @@ async function authRoutes(fastify: FastifyInstance) {
         redirectUri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:4000/auth/google/callback'
       });
 
-      // 프론트엔드로 리디렉트 (토큰과 함께)
+      // 프론트엔드로 리디렉트 (토큰과 동의서 정보 함께)
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      return reply.redirect(`${frontendUrl}/auth/callback?token=${result.token}&success=${result.success}`);
+      const params = new URLSearchParams({
+        token: result.token,
+        success: result.success.toString(),
+        consentsRequired: result.consents.required.toString()
+      });
+      return reply.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
     } catch (error: any) {
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
       return reply.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent(error.message)}`);
@@ -64,9 +69,14 @@ async function authRoutes(fastify: FastifyInstance) {
         redirectUri: process.env.KAKAO_REDIRECT_URI || 'http://localhost:4000/auth/kakao/callback'
       });
 
-      // 프론트엔드로 리디렉트 (토큰과 함께)
+      // 프론트엔드로 리디렉트 (토큰과 동의서 정보 함께)
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      return reply.redirect(`${frontendUrl}/auth/callback?token=${result.token}&success=${result.success}`);
+      const params = new URLSearchParams({
+        token: result.token,
+        success: result.success.toString(),
+        consentsRequired: result.consents.required.toString()
+      });
+      return reply.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
 
     } catch (error: any) {
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';

@@ -1,58 +1,32 @@
-import React, { useState } from 'react';
-import { useQuery } from '@apollo/client';
+import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation, useApolloClient } from '@apollo/client';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/Navbar';
 import OverallFeedback from '../components/FeedbackChart';
-import { GET_MY_STATS, GET_MY_SESSIONS, GET_MY_FEEDBACKS } from '../lib/apollo';
-import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
-
-// 안전한 날짜 파싱 함수
-const formatDate = (dateString: string | null | undefined, options?: Intl.DateTimeFormatOptions): string => {
-  if (!dateString) return '정보 없음';
-  
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) {
-      return '정보 없음';
-    }
-    
-    const defaultOptions: Intl.DateTimeFormatOptions = {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    };
-    
-    return date.toLocaleDateString('ko-KR', options || defaultOptions);
-  } catch {
-    return '정보 없음';
-  }
-};
-
-interface UserStats {
-  id: number;
-  userId: string;
-  totalSessions: number;
-  totalMessages: number;
-  streakDays: number;
-  lastStudyDate?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface Session {
-  id: string;
-  userId: string;
-  teacher: string;
-  topic: string;
-  summary: string;
-  feedback: string[];
-  createdAt: string;
-}
+import { 
+  GET_ME, 
+  GET_MY_STATS, 
+  GET_MY_SESSIONS, 
+  GET_MY_FEEDBACKS,
+  GET_MY_SUBSCRIPTION_STATUS,
+  UNSUBSCRIBE_NEWSLETTER,
+  SUBSCRIBE_NEWSLETTER,
+  DELETE_ACCOUNT
+} from '../lib/apollo';
+import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { 
+  MdWarning,
+  MdCancel,
+  MdPerson,
+  MdDelete,
+  MdFeedback
+} from 'react-icons/md';
+import emmaImage from '../assets/emma.png';
+import steveImage from '../assets/steve.png';
 
 interface FeedbackData {
-  id: number;
+  id: string;
   sessionId: string;
-  userId: string;
   overallScore: number;
   overallGrade: string;
   grammarScore: number;
@@ -60,47 +34,46 @@ interface FeedbackData {
   fluencyScore: number;
   comprehensionScore: number;
   naturalnessScore: number;
-  interactionScore: number; // 추가된 필드
   strengths: string[];
   improvements: string[];
-  corrections: Array<{
-    original: string;
-    corrected: string;
-    reason: string;
-  }>;
+  corrections: any[];
   recommendedFocus: string;
   nextTopics: string[];
   createdAt: string;
 }
 
-interface OverallStats {
-  averageScores: {
-    grammar: number;
-    vocabulary: number;
-    fluency: number;
-    comprehension: number;
-    naturalness: number;
-    interaction: number; // 추가된 필드
-    overall: number;
-  };
+interface SessionData {
+  id: string;
+  teacher: string;
+  topic: string;
+  summary?: string;
+  feedback: string[];
+  createdAt: string;
+}
+
+interface UserStats {
   totalSessions: number;
-  commonStrengths: string[];
-  commonImprovements: string[];
-  overallGrade: string;
+  totalMessages: number;
+  streakDays: number;
+  lastStudyDate?: string;
 }
 
 export default function Dashboard() {
-  const { user } = useAuth();
-  const [selectedFeedback, setSelectedFeedback] = useState<FeedbackData | null>(null);
+  const { user, logout } = useAuth();
+  const apolloClient = useApolloClient();
+  const [activeTab, setActiveTab] = useState('overview');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<SessionData | null>(null);
 
-  // GraphQL 쿼리들
+  // GraphQL Queries
   const { data: statsData, loading: statsLoading } = useQuery(GET_MY_STATS, {
     skip: !user,
     errorPolicy: 'all'
   });
 
   const { data: sessionsData, loading: sessionsLoading } = useQuery(GET_MY_SESSIONS, {
-    variables: { limit: 10 },
+    variables: { limit: 20 },
     skip: !user,
     errorPolicy: 'all'
   });
@@ -111,320 +84,216 @@ export default function Dashboard() {
     errorPolicy: 'all'
   });
 
-  const userStats: UserStats | null = statsData?.myStats || null;
-  const recentSessions: Session[] = sessionsData?.mySessions || [];
-  const allFeedbacks: FeedbackData[] = feedbacksData?.myFeedbacks || [];
+  const { data: subscriptionData, loading: subscriptionLoading, refetch: refetchSubscription } = useQuery(GET_MY_SUBSCRIPTION_STATUS, {
+    skip: !user,
+    errorPolicy: 'all'
+  });
 
-  // 피드백 데이터 집계
-  const aggregateFeedbackData = (feedbackList: FeedbackData[]): OverallStats => {
-    const totalFeedbacks = feedbackList.length;
+  const [subscribeNewsletter] = useMutation(SUBSCRIBE_NEWSLETTER);
+  const [unsubscribeNewsletter] = useMutation(UNSUBSCRIBE_NEWSLETTER);
+  const [deleteAccount] = useMutation(DELETE_ACCOUNT);
+
+  const stats: UserStats | null = statsData?.myStats || null;
+  const sessions: SessionData[] = sessionsData?.mySessions || [];
+  const feedbacks: FeedbackData[] = feedbacksData?.myFeedbacks || [];
+  const subscriptionStatus = subscriptionData?.mySubscriptionStatus || null;
+
+  // Calculate overall feedback stats for spider chart
+  const overallStats = feedbacks.length > 0 ? {
+    averageScores: {
+      grammar: feedbacks.reduce((sum, f) => sum + f.grammarScore, 0) / feedbacks.length,
+      vocabulary: feedbacks.reduce((sum, f) => sum + f.vocabularyScore, 0) / feedbacks.length,
+      fluency: feedbacks.reduce((sum, f) => sum + f.fluencyScore, 0) / feedbacks.length,
+      comprehension: feedbacks.reduce((sum, f) => sum + f.comprehensionScore, 0) / feedbacks.length,
+      naturalness: feedbacks.reduce((sum, f) => sum + f.naturalnessScore, 0) / feedbacks.length,
+      overall: feedbacks.reduce((sum, f) => sum + f.overallScore, 0) / feedbacks.length,
+    },
+    totalSessions: feedbacks.length,
+    commonStrengths: Array.from(new Set(feedbacks.flatMap(f => f.strengths))).slice(0, 5),
+    commonImprovements: Array.from(new Set(feedbacks.flatMap(f => f.improvements))).slice(0, 5),
+    overallGrade: feedbacks[0]?.overallGrade || 'N/A'
+  } : null;
+
+  // Prepare spider chart data
+  const spiderData = overallStats ? [
+    { subject: '문법', score: overallStats.averageScores.grammar, fullMark: 10 },
+    { subject: '어휘', score: overallStats.averageScores.vocabulary, fullMark: 10 },
+    { subject: '유창성', score: overallStats.averageScores.fluency, fullMark: 10 },
+    { subject: '이해력', score: overallStats.averageScores.comprehension, fullMark: 10 },
+    { subject: '자연스러움', score: overallStats.averageScores.naturalness, fullMark: 10 },
+  ] : [];
+
+  // Prepare progress chart data
+  const progressData = feedbacks.slice(-10).map((feedback, index) => ({
+    session: `${index + 1}`,
+    score: feedback.overallScore,
+    date: new Date(feedback.createdAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+  }));
+
+  const handleSubscriptionToggle = async () => {
+    if (!user?.email) return;
     
-    if (totalFeedbacks === 0) {
-      return {
-        averageScores: {
-          grammar: 0,
-          vocabulary: 0,
-          fluency: 0,
-          comprehension: 0,
-          naturalness: 0,
-          interaction: 0, // 추가된 필드
-          overall: 0
-        },
-        totalSessions: 0,
-        commonStrengths: [],
-        commonImprovements: [],
-        overallGrade: 'NV'
-      };
+    try {
+      if (subscriptionStatus?.isSubscribed) {
+        const result = await unsubscribeNewsletter({
+          variables: { email: user.email }
+        });
+        if (result.data?.unsubscribeNewsletter?.success) {
+          alert('구독이 해지되었습니다.');
+        }
+      } else {
+        const result = await subscribeNewsletter({
+          variables: { email: user.email }
+        });
+        if (result.data?.subscribeNewsletter?.success) {
+          alert('구독 확인 이메일이 발송되었습니다.');
+        }
+      }
+      refetchSubscription();
+    } catch (error) {
+      console.error('Subscription error:', error);
+      alert('처리 중 오류가 발생했습니다.');
     }
-
-    // 평균 점수 계산
-    const avgGrammar = feedbackList.reduce((sum, f) => sum + f.grammarScore, 0) / totalFeedbacks;
-    const avgVocabulary = feedbackList.reduce((sum, f) => sum + f.vocabularyScore, 0) / totalFeedbacks;
-    const avgFluency = feedbackList.reduce((sum, f) => sum + f.fluencyScore, 0) / totalFeedbacks;
-    const avgComprehension = feedbackList.reduce((sum, f) => sum + f.comprehensionScore, 0) / totalFeedbacks;
-    const avgNaturalness = feedbackList.reduce((sum, f) => sum + f.naturalnessScore, 0) / totalFeedbacks;
-    const avgInteraction = feedbackList.reduce((sum, f) => sum + (f.interactionScore || 0), 0) / totalFeedbacks; // 추가된 필드 (null 처리)
-    const avgOverall = feedbackList.reduce((sum, f) => sum + f.overallScore, 0) / totalFeedbacks;
-
-    // 가장 자주 나오는 강점과 개선점 추출
-    const allStrengths: string[] = [];
-    const allImprovements: string[] = [];
-
-    feedbackList.forEach(feedback => {
-      if (Array.isArray(feedback.strengths)) {
-        allStrengths.push(...feedback.strengths);
-      }
-      if (Array.isArray(feedback.improvements)) {
-        allImprovements.push(...feedback.improvements);
-      }
-    });
-
-    // 빈도수로 정렬하여 상위 3개씩 선택
-    const strengthCounts = allStrengths.reduce((acc, strength) => {
-      acc[strength] = (acc[strength] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const improvementCounts = allImprovements.reduce((acc, improvement) => {
-      acc[improvement] = (acc[improvement] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const commonStrengths = Object.entries(strengthCounts)
-      .sort(([,a], [,b]) => b - a)
-      .slice(0, 3)
-      .map(([strength]) => strength);
-
-    const commonImprovements = Object.entries(improvementCounts)
-      .sort(([,a], [,b]) => b - a)
-      .slice(0, 3)
-      .map(([improvement]) => improvement);
-
-    // 전체 등급 결정
-    let overallGrade = 'NV';
-    if (avgOverall >= 8.5) overallGrade = 'IH';
-    else if (avgOverall >= 7.0) overallGrade = 'IM';
-    else if (avgOverall >= 5.5) overallGrade = 'IL';
-    else if (avgOverall >= 4.0) overallGrade = 'NH';
-    else if (avgOverall >= 2.5) overallGrade = 'NM';
-    else overallGrade = 'NL';
-
-    return {
-      averageScores: {
-        grammar: avgGrammar,
-        vocabulary: avgVocabulary,
-        fluency: avgFluency,
-        comprehension: avgComprehension,
-        naturalness: avgNaturalness,
-        interaction: avgInteraction, // 추가된 필드
-        overall: avgOverall
-      },
-      totalSessions: totalFeedbacks,
-      commonStrengths,
-      commonImprovements,
-      overallGrade
-    };
   };
 
-  const overallStats = allFeedbacks.length > 0 ? aggregateFeedbackData(allFeedbacks) : null;
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    
+    setIsDeleting(true);
+    try {
+      const result = await deleteAccount();
+      
+      if (result.data?.deleteAccount?.success) {
+        alert(result.data.deleteAccount.message || '계정이 삭제되었습니다.');
+        // 강제로 페이지를 완전히 새로고침하여 모든 상태 초기화
+        window.location.href = '/login?deleted=true';
+      } else {
+        alert(result.data?.deleteAccount?.message || '계정 삭제 중 오류가 발생했습니다.');
+      }
+    } catch (error) {
+      console.error('Delete account error:', error);
+      alert('계정 삭제 중 오류가 발생했습니다.');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
 
-  const loading = statsLoading || sessionsLoading || feedbacksLoading;
-
-  if (loading) {
-    return (
-      <div className="h-screen overflow-hidden bg-white">
-        <Navbar />
-        <div className="pt-28 h-full flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-            <p className="text-gray-600">데이터를 불러오는 중...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
 
   if (!user) {
     return (
-      <div className="h-screen overflow-hidden bg-white">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Navbar />
-        <div className="pt-28 h-full flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-gray-600 mb-4">로그인이 필요합니다.</p>
-            <a href="/login" className="bg-gray-800 text-white px-6 py-3 rounded-[20px] hover:bg-gray-700">
-              로그인하기
-            </a>
-          </div>
+        <div className="text-center">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">로그인이 필요합니다</h3>
+          <a href="/login" className="px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors">
+            로그인하기
+          </a>
         </div>
       </div>
     );
   }
 
-  const getInitial = (name: string) => {
-    return name ? name.charAt(0).toUpperCase() : 'U';
-  };
-
   return (
-    <div className="h-screen overflow-auto bg-white">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
-      <div className="pt-28 pb-12 px-6">
-        <div className="max-w-6xl mx-auto">
-          {/* 헤더 */}
-          <div className="mb-8">
-            <div className="flex items-center space-x-4 mb-2">
-              <div className="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                {getInitial(user.name || '')}
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-800">{user.name}님의 학습 현황</h1>
-                <p className="text-gray-600">{user.email}</p>
-              </div>
-            </div>
-          </div>
 
-          {/* 통계 카드 */}
-          {userStats && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white rounded-[20px] p-6 shadow-lg border border-gray-200">
-                <h3 className="text-sm font-medium text-gray-600 mb-2">총 세션</h3>
-                <p className="text-3xl font-bold text-gray-800">{userStats.totalSessions}</p>
-              </div>
-              <div className="bg-white rounded-[20px] p-6 shadow-lg border border-gray-200">
-                <h3 className="text-sm font-medium text-gray-600 mb-2">총 메시지</h3>
-                <p className="text-3xl font-bold text-gray-800">{userStats.totalMessages}</p>
-              </div>
-              <div className="bg-white rounded-[20px] p-6 shadow-lg border border-gray-200">
-                <h3 className="text-sm font-medium text-gray-600 mb-2">연속 학습</h3>
-                <p className="text-3xl font-bold text-gray-800">{userStats.streakDays}일</p>
-              </div>
-              <div className="bg-white rounded-[20px] p-6 shadow-lg border border-gray-200">
-                <h3 className="text-sm font-medium text-gray-600 mb-2">마지막 학습</h3>
-                <p className="text-lg font-bold text-gray-800">
-                  {userStats.lastStudyDate 
-                    ? formatDate(userStats.lastStudyDate) 
-                    : '없음'}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* 종합 피드백 */}
-          <div className="mb-8">
-            <OverallFeedback overallStats={overallStats} />
-          </div>
-
-          {/* 최근 학습 기록 */}
-          <div className="bg-white rounded-[20px] p-8 shadow-lg border border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">최근 학습 기록</h2>
-            
-            {recentSessions.length > 0 ? (
-              <div className="space-y-6">
-                {recentSessions.map((session) => {
-                  const sessionFeedback = allFeedbacks.find(f => f.sessionId === session.id);
-                  return (
-                    <div 
-                      key={session.id} 
-                      className={`border-b border-gray-100 pb-6 last:border-b-0 ${
-                        sessionFeedback ? 'cursor-pointer' : ''
-                      }`}
-                      onClick={() => sessionFeedback && setSelectedFeedback(sessionFeedback)}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-3">
-                            <span className="bg-gray-800 text-white px-3 py-1.5 rounded-[12px] text-sm font-medium">
-                              {session.teacher}
-                            </span>
-                            <span className="text-gray-700 font-medium">{session.topic}</span>
-                            {sessionFeedback && (
-                              <span className="px-3 py-1 rounded-[8px] text-xs font-medium bg-sky-100 text-sky-700 border border-sky-200">
-                                {sessionFeedback.overallGrade} {sessionFeedback.overallScore.toFixed(1)}점
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-gray-600 text-sm leading-relaxed mb-2">{session.summary}</p>
-                          {sessionFeedback && (
-                            <div className="text-xs text-gray-500">
-                              클릭하여 상세 피드백 보기
-                            </div>
-                          )}
-                        </div>
-                        <span className="text-gray-400 text-xs ml-4">
-                          {formatDate(session.createdAt, {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-16">
-                <div className="text-gray-400 mb-4">
-                  <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
+      {/* User Header */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-gray-200 rounded-full overflow-hidden">
+              {user.picture ? (
+                <img src={user.picture} alt={user.name || user.email} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+                  <MdPerson className="w-6 h-6 text-gray-600" />
                 </div>
-                <p className="text-gray-500 mb-6">아직 학습 기록이 없습니다</p>
-                <a 
-                  href="/teacher"
-                  className="inline-block px-6 py-3 bg-gray-800 text-white rounded-[20px] font-medium hover:bg-gray-700 transition-colors"
-                >
-                  첫 학습 시작하기
-                </a>
+              )}
+            </div>
+            <div className="flex items-center space-x-3">
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h1 className="text-xl font-bold text-gray-900">{user.name || '사용자'}</h1>
+                  {subscriptionStatus?.isSubscribed ? (
+                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                      구독중
+                    </span>
+                  ) : (
+                    <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+                      미구독
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-gray-500">{user.email}</p>
               </div>
-            )}
+            </div>
           </div>
+        </div>
+        
+        {/* Navigation Tabs */}
+        <div className="border-b border-gray-200">
+          <nav className="flex space-x-8">
+            {[
+              { id: 'overview', name: '대시보드' },
+              { id: 'learning', name: '히스토리' },
+              { id: 'settings', name: '설정' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`py-4 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-black text-black'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                {tab.name}
+              </button>
+            ))}
+          </nav>
         </div>
       </div>
 
-      {/* 피드백 상세 모달 */}
-      {selectedFeedback && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-[20px] w-full max-w-5xl h-[90vh] overflow-hidden shadow-2xl">
-            <div className="h-full flex flex-col">
-              {/* 모달 헤더 */}
-              <div className="flex justify-between items-start p-8 border-b border-gray-200 flex-shrink-0">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-800">상세 피드백</h2>
-                  <p className="text-gray-600 mt-1">
-                    {formatDate(selectedFeedback.createdAt, {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                </div>
-                <button 
-                  onClick={() => setSelectedFeedback(null)}
-                  className="text-gray-400 hover:text-gray-600 text-2xl w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-                >
-                  ×
-                </button>
-              </div>
-              
-              {/* 모달 콘텐츠 */}
-              <div 
-                className="flex-1 p-8 overflow-y-auto"
-                style={{
-                  scrollbarWidth: 'none',
-                  msOverflowStyle: 'none'
-                }}
-              >
-                <style>{`
-                  .feedback-modal::-webkit-scrollbar {
-                    display: none;
-                  }
-                `}</style>
-                <div className="feedback-modal space-y-8">
-                  {/* 종합 점수 */}
-                  <div className="text-center bg-gray-50 rounded-[20px] p-8">
-                    <div className="text-5xl font-bold text-gray-800 mb-3">{selectedFeedback.overallScore.toFixed(1)}</div>
-                    <div className="text-xl font-semibold mb-3 px-4 py-2 rounded-[12px] inline-block bg-sky-100 text-sky-700 border border-sky-200">
-                      {selectedFeedback.overallGrade}
-                    </div>
-                  </div>
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-8">
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            {/* Welcome Message */}
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                안녕하세요 {user.name || '사용자'}님!
+              </h2>
+              <p className="text-gray-600">
+                LinguaLetter와 함께하는 영어 학습 여정을 확인해보세요.
+              </p>
+            </div>
 
-                  {/* 레이더 차트 - 6개 영역으로 확장 */}
-                  <div className="bg-white rounded-[20px] p-6 border border-gray-200">
-                    <h3 className="text-lg font-bold text-gray-800 mb-6 text-center">영역별 상세 분석</h3>
-                    <div className="h-80 w-full mb-6">
+            {/* Main Learning History Card with Spider Chart */}
+            <div className="bg-white border border-gray-200 rounded-xl p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900">학습 성과 분석</h2>
+                <div className="flex items-center space-x-2">
+                  <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
+                    {overallStats?.overallGrade || 'N/A'}
+                  </span>
+                </div>
+              </div>
+
+              {overallStats ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Spider Chart */}
+                  <div className="flex flex-col items-center">
+                    <div className="w-full h-80">
                       <ResponsiveContainer width="100%" height="100%">
-                        <RadarChart data={[
-                          { subject: '문법', score: selectedFeedback.grammarScore },
-                          { subject: '어휘', score: selectedFeedback.vocabularyScore },
-                          { subject: '유창성', score: selectedFeedback.fluencyScore },
-                          { subject: '이해력', score: selectedFeedback.comprehensionScore },
-                          { subject: '자연스러움', score: selectedFeedback.naturalnessScore },
-                          { subject: '상호작용', score: selectedFeedback.interactionScore || 0 } // 추가된 필드
-                        ]}>
+                        <RadarChart data={spiderData}>
                           <PolarGrid 
                             gridType="polygon"
                             radialLines={true}
@@ -432,7 +301,7 @@ export default function Dashboard() {
                           />
                           <PolarAngleAxis 
                             dataKey="subject" 
-                            tick={{ fontSize: 12, fill: '#4b5563' }}
+                            tick={{ fontSize: 12, fill: '#374151' }}
                             className="text-sm font-medium"
                           />
                           <PolarRadiusAxis 
@@ -444,127 +313,427 @@ export default function Dashboard() {
                           <Radar
                             name="점수"
                             dataKey="score"
-                            stroke="#0ea5e9"
-                            fill="#0ea5e9"
+                            stroke="#000000"
+                            fill="#000000"
                             fillOpacity={0.1}
                             strokeWidth={2}
-                            dot={{ r: 4, fill: '#0ea5e9', stroke: '#ffffff', strokeWidth: 2 }}
-                            isAnimationActive={false}
+                            dot={{ r: 4, fill: '#000000', stroke: '#ffffff', strokeWidth: 2 }}
                           />
                         </RadarChart>
                       </ResponsiveContainer>
                     </div>
                     
-                    {/* 점수 표시 - 6개 영역으로 확장 */}
-                    <div className="grid grid-cols-3 lg:grid-cols-6 gap-4 text-center">
-                      {[
-                        { name: '문법', score: selectedFeedback.grammarScore },
-                        { name: '어휘', score: selectedFeedback.vocabularyScore },
-                        { name: '유창성', score: selectedFeedback.fluencyScore },
-                        { name: '이해력', score: selectedFeedback.comprehensionScore },
-                        { name: '자연스러움', score: selectedFeedback.naturalnessScore },
-                        { name: '상호작용', score: selectedFeedback.interactionScore || 0 } // 추가된 필드
-                      ].map((item, index) => (
-                        <div key={index} className="bg-gray-50 rounded-[12px] p-3">
-                          <span className="text-sm text-gray-600 block mb-1">{item.name}</span>
-                          <span className="text-xl font-bold text-gray-800">{item.score.toFixed(1)}</span>
+                    {/* Score Grid */}
+                    <div className="grid grid-cols-5 gap-4 mt-4 w-full">
+                      {spiderData.map((item, index) => (
+                        <div key={index} className="text-center">
+                          <div className="bg-gray-50 rounded-lg p-3 border">
+                            <p className="text-xs text-gray-600 mb-1">{item.subject}</p>
+                            <p className="text-lg font-bold text-gray-900">{item.score.toFixed(1)}</p>
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* 강점과 개선점 */}
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {/* 잘한 점 */}
-                    <div className="bg-white rounded-[20px] p-6 border border-gray-200">
-                      <h3 className="text-lg font-bold text-gray-800 mb-4">잘한 점</h3>
-                      <div className="space-y-3">
-                        {selectedFeedback.strengths && selectedFeedback.strengths.length > 0 ? (
-                          selectedFeedback.strengths.map((strength, index) => (
-                            <div key={index} className="flex items-start bg-gray-50 rounded-[12px] p-3">
-                              <div className="w-6 h-6 bg-gray-800 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3 mt-0.5 flex-shrink-0">
-                                {index + 1}
-                              </div>
-                              <p className="text-gray-700 text-sm">{strength}</p>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-gray-500 text-sm">분석 중입니다...</p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* 개선점 */}
-                    <div className="bg-white rounded-[20px] p-6 border border-gray-200">
-                      <h3 className="text-lg font-bold text-gray-800 mb-4">개선점</h3>
-                      <div className="space-y-3">
-                        {selectedFeedback.improvements && selectedFeedback.improvements.length > 0 ? (
-                          selectedFeedback.improvements.map((improvement, index) => (
-                            <div key={index} className="flex items-start bg-gray-50 rounded-[12px] p-3">
-                              <div className="w-6 h-6 bg-sky-600 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3 mt-0.5 flex-shrink-0">
-                                {index + 1}
-                              </div>
-                              <p className="text-gray-700 text-sm">{improvement}</p>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-gray-500 text-sm">분석 중입니다...</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 교정 사항 */}
-                  {selectedFeedback.corrections && selectedFeedback.corrections.length > 0 && (
-                    <div className="bg-white rounded-[20px] p-6 border border-gray-200">
-                      <h3 className="text-lg font-bold text-gray-800 mb-4">교정 사항</h3>
-                      <div className="space-y-4">
-                        {selectedFeedback.corrections.map((correction, index) => (
-                          <div key={index} className="bg-gray-50 rounded-[16px] p-4 border-l-4 border-sky-400">
-                            <div className="space-y-3">
-                              <div className="flex items-start space-x-2">
-                                <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded font-medium">원문</span>
-                                <span className="text-gray-600 line-through text-sm">{correction.original}</span>
-                              </div>
-                              <div className="flex items-start space-x-2">
-                                <span className="text-xs bg-sky-100 text-sky-600 px-2 py-1 rounded font-medium">교정</span>
-                                <span className="text-gray-800 font-medium text-sm">{correction.corrected}</span>
-                              </div>
-                              <div className="bg-white p-3 rounded-[12px] border border-gray-200">
-                                <span className="text-gray-700 text-sm">{correction.reason}</span>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 추천 학습 방향 */}
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="bg-white rounded-[20px] p-6 border border-gray-200">
-                      <h3 className="text-lg font-bold text-gray-800 mb-4">추천 학습 포커스</h3>
-                      <div className="bg-blue-50 rounded-[12px] p-4">
-                        <p className="text-gray-700 font-medium">{selectedFeedback.recommendedFocus}</p>
-                      </div>
-                    </div>
-
-                    <div className="bg-white rounded-[20px] p-6 border border-gray-200">
-                      <h3 className="text-lg font-bold text-gray-800 mb-4">다음 추천 주제</h3>
-                      <div className="space-y-2">
-                        {selectedFeedback.nextTopics && selectedFeedback.nextTopics.length > 0 ? (
-                          selectedFeedback.nextTopics.map((topic, index) => (
-                            <div key={index} className="bg-gray-50 rounded-[8px] px-3 py-2">
-                              <span className="text-gray-700 text-sm">{topic}</span>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-gray-500 text-sm">추천 주제를 분석 중입니다...</p>
-                        )}
-                      </div>
+                  {/* Progress Chart */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">최근 진행 상황</h3>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={progressData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                          <XAxis dataKey="date" stroke="#6b7280" fontSize={12} />
+                          <YAxis domain={[0, 10]} stroke="#6b7280" fontSize={12} />
+                          <Tooltip 
+                            contentStyle={{
+                              backgroundColor: 'white',
+                              border: '1px solid #e5e7eb',
+                              borderRadius: '8px',
+                              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                            }}
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="score" 
+                            stroke="#000000" 
+                            strokeWidth={2}
+                            dot={{ fill: '#000000', strokeWidth: 2, r: 4 }}
+                            activeDot={{ r: 6, fill: '#000000' }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
                     </div>
                   </div>
                 </div>
+              ) : (
+                <div className="text-center py-20">
+                  <h3 className="text-xl font-medium text-gray-900 mb-3">학습 데이터가 없습니다</h3>
+                  <p className="text-gray-500 mb-8">AI 선생님과의 첫 대화를 시작해보세요</p>
+                  <a 
+                    href="/teacher" 
+                    className="inline-block px-8 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                  >
+                    대화 시작하기
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Recent Feedback Summary */}
+            {feedbacks.length > 0 && (
+              <div className="bg-white border border-gray-200 rounded-xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">최근 피드백 요약</h3>
+                  <span className="text-sm text-gray-500">{feedbacks.length}개의 피드백</span>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Latest Feedback */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">최신 피드백</h4>
+                    <div className="space-y-3">
+                      {feedbacks.slice(0, 3).map((feedback, index) => (
+                        <div key={feedback.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                          <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-white text-xs font-bold">{feedback.overallScore.toFixed(1)}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs font-medium">
+                                {feedback.overallGrade}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {new Date(feedback.createdAt).toLocaleDateString('ko-KR')}
+                              </span>
+                            </div>
+                            {feedback.strengths.length > 0 && (
+                              <p className="text-sm text-gray-600 truncate">
+                                강점: {feedback.strengths[0]}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Common Patterns */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">학습 패턴</h4>
+                    <div className="space-y-3">
+                      {overallStats?.commonStrengths.slice(0, 3).map((strength, index) => (
+                        <div key={index} className="p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
+                          <span className="text-sm text-gray-700 font-medium">강점:</span>
+                          <span className="text-sm text-gray-700 ml-2">{strength}</span>
+                        </div>
+                      ))}
+                      {overallStats?.commonImprovements.slice(0, 2).map((improvement, index) => (
+                        <div key={index} className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                          <span className="text-sm text-gray-700 font-medium">개선:</span>
+                          <span className="text-sm text-gray-700 ml-2">{improvement}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'learning' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-500">
+                총 {sessions.length}개의 세션
+              </div>
+            </div>
+
+            {sessions.length > 0 ? (
+              <div className="space-y-4">
+                {sessions.map((session) => (
+                  <div 
+                    key={session.id} 
+                    onClick={() => setSelectedSession(session)}
+                    className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow cursor-pointer"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-4 flex-1">
+                        <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                          <img 
+                            src={session.teacher === 'emma' ? emmaImage : steveImage}
+                            alt={session.teacher === 'emma' ? 'Emma 선생님' : 'Steve 선생님'}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <h3 className="text-lg font-semibold text-gray-900 truncate">{session.topic}</h3>
+                            <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+                              {session.teacher === 'emma' ? 'Emma' : 'Steve'}
+                            </span>
+                          </div>
+                          
+                          {session.summary && (
+                            <p className="text-gray-600 text-sm mb-3 line-clamp-2">{session.summary}</p>
+                          )}
+                          
+                          {session.feedback.length > 0 && (
+                            <div className="space-y-2">
+                              <div className="flex items-center space-x-2">
+                                <MdFeedback className="w-4 h-4 text-gray-500" />
+                                <span className="text-sm font-medium text-gray-700">피드백 {session.feedback.length}개</span>
+                              </div>
+                              <div className="space-y-1">
+                                {session.feedback.slice(0, 2).map((feedback, index) => (
+                                  <p key={index} className="text-sm text-gray-600 bg-gray-50 rounded-lg p-2 line-clamp-1">
+                                    {feedback}
+                                  </p>
+                                ))}
+                                {session.feedback.length > 2 && (
+                                  <p className="text-xs text-gray-500 pl-2">
+                                    +{session.feedback.length - 2}개 더 보기
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="text-right flex-shrink-0 ml-4">
+                        <div className="text-sm text-gray-500 mb-1">
+                          <span>{formatDate(session.createdAt)}</span>
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {new Date(session.createdAt).toLocaleTimeString('ko-KR', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Load More Button (if needed in the future) */}
+                {sessions.length >= 10 && (
+                  <div className="text-center pt-4">
+                    <button className="px-6 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                      더 보기
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="bg-white border border-gray-200 rounded-xl p-20 text-center">
+                <h3 className="text-xl font-medium text-gray-900 mb-3">대화 기록이 없습니다</h3>
+                <p className="text-gray-500 mb-8 max-w-sm mx-auto leading-relaxed">
+                  AI 선생님과 첫 대화를 나누고<br />학습 여정을 시작해보세요
+                </p>
+                <a 
+                  href="/teacher" 
+                  className="inline-block px-8 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                >
+                  대화 시작하기
+                </a>
+              </div>
+            )}
+          </div>
+        )}
+
+
+        {activeTab === 'settings' && (
+          <div className="space-y-8">
+            
+            <div className="space-y-6">
+
+              {/* Newsletter Subscription */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">뉴스레터 구독</h3>
+                <div className="bg-white border border-gray-200 rounded-xl p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900">{user.email}</p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <span className="text-sm text-gray-500">상태:</span>
+                        {subscriptionStatus?.isSubscribed ? (
+                          <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                            구독 중
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+                            미구독
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {subscriptionStatus?.isSubscribed ? (
+                      <button
+                        onClick={handleSubscriptionToggle}
+                        className="px-4 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors"
+                      >
+                        구독 해지
+                      </button>
+                    ) : (
+                      <a
+                        href="/subscription"
+                        className="px-4 py-2 rounded-lg text-sm font-medium bg-black text-white hover:bg-gray-800 transition-colors inline-block"
+                      >
+                        구독하기
+                      </a>
+                    )}
+                  </div>
+                  
+                  <div className="mt-4 pt-4 border-t border-gray-100 text-sm text-gray-600">
+                    <p>매일 오전 6시에 영어 표현 학습 뉴스레터가 발송됩니다.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Account Deletion */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">계정 관리</h3>
+                <div className="bg-white border border-red-200 rounded-xl p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium text-gray-900">계정 삭제</h4>
+                      <p className="text-sm text-gray-600 mt-1">
+                        계정을 영구적으로 삭제합니다. 이 작업은 되돌릴 수 없습니다.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+                    >
+                      삭제
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Session Detail Modal */}
+      {selectedSession && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
+            <div className="p-6">
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-full overflow-hidden">
+                    <img 
+                      src={selectedSession.teacher === 'emma' ? emmaImage : steveImage}
+                      alt={selectedSession.teacher === 'emma' ? 'Emma 선생님' : 'Steve 선생님'}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900">{selectedSession.topic}</h3>
+                    <p className="text-sm text-gray-500">
+                      {selectedSession.teacher === 'emma' ? 'Emma 선생님' : 'Steve 선생님'} • {formatDate(selectedSession.createdAt)}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedSession(null)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <MdCancel className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+
+              {/* 해당 세션의 피드백 분석 표시 */}
+              {(() => {
+                const sessionFeedback = feedbacks.find(f => f.sessionId === selectedSession.id);
+                if (sessionFeedback) {
+                  const sessionStats = {
+                    averageScores: {
+                      grammar: sessionFeedback.grammarScore,
+                      vocabulary: sessionFeedback.vocabularyScore,
+                      fluency: sessionFeedback.fluencyScore,
+                      comprehension: sessionFeedback.comprehensionScore,
+                      naturalness: sessionFeedback.naturalnessScore,
+                      overall: sessionFeedback.overallScore,
+                    },
+                    totalSessions: 1,
+                    commonStrengths: sessionFeedback.strengths,
+                    commonImprovements: sessionFeedback.improvements,
+                    overallGrade: sessionFeedback.overallGrade
+                  };
+                  
+                  return (
+                    <div className="mb-6">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4">세션 피드백 분석</h4>
+                      <OverallFeedback overallStats={sessionStats} />
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+              
+
+              {selectedSession.feedback.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">대화 피드백 ({selectedSession.feedback.length}개)</h4>
+                  <div className="space-y-3">
+                    {selectedSession.feedback.map((feedback, index) => (
+                      <div key={index} className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-start space-x-2">
+                          <div className="w-6 h-6 bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <span className="text-white text-xs font-bold">{index + 1}</span>
+                          </div>
+                          <p className="text-gray-700 text-sm">{feedback}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full">
+            <div className="text-center">
+              <h3 className="text-xl font-medium text-gray-900 mb-4">계정 삭제</h3>
+              
+              <div className="text-gray-600 mb-8">
+                <p className="mb-4">계정과 모든 데이터가 영구적으로 삭제됩니다.</p>
+                <div className="bg-red-50 rounded-lg p-4 text-left text-sm">
+                  <p className="font-medium text-gray-700 mb-2">삭제되는 데이터:</p>
+                  <div className="text-gray-600 space-y-1">
+                    <div>학습 세션 및 대화 기록</div>
+                    <div>피드백 및 성과 데이터</div>
+                    <div>계정 정보 및 설정</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                  disabled={isDeleting}
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-3 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 disabled:opacity-50 transition-colors"
+                >
+                  {isDeleting ? '삭제 중...' : '삭제'}
+                </button>
               </div>
             </div>
           </div>

@@ -6,6 +6,7 @@ import { typeDefs } from './schema/typeDefs';
 import { resolvers } from './resolvers';
 import { createContext } from './middlewares/auth';
 import { confirmSubscription } from './services/newsletterService';
+import prisma from './db';
 import { handleGoogleAuth, handleKakaoAuth } from './services/authService';
 
 dotenv.config();
@@ -153,6 +154,117 @@ async function start() {
           <head><meta charset="utf-8"><title>오류</title></head>
           <body style="font-family: sans-serif; text-align: center; padding: 50px;">
             <h2>오류가 발생했습니다</h2>
+            <p>${error.message}</p>
+          </body>
+        </html>
+      `);
+    }
+  });
+
+  // 구독 해지 페이지 (GET)
+  app.get('/newsletter/unsubscribe/:token', async (request: any, reply) => {
+    const { token } = request.params;
+    
+    try {
+      const subscriber = await prisma.newsletterSubscriber.findUnique({
+        where: { unsubscribeToken: token }
+      });
+
+      if (!subscriber) {
+        return reply.code(404).type('text/html').send(`
+          <!DOCTYPE html>
+          <html>
+            <head><meta charset="utf-8"><title>링크 오류</title></head>
+            <body style="font-family: sans-serif; text-align: center; padding: 50px;">
+              <h2>유효하지 않은 링크입니다</h2>
+              <p>구독 해지 링크가 만료되었거나 잘못되었습니다.</p>
+              <a href="/">홈으로 가기</a>
+            </body>
+          </html>
+        `);
+      }
+
+      return reply.type('text/html').send(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>LinguaLetter - 구독 해지</title>
+            <style>
+              body { font-family: -apple-system, sans-serif; text-align: center; padding: 50px; background: #fafafa; }
+              .container { max-width: 500px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+              .btn { background: #dc2626; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; display: inline-block; margin: 10px; border: none; cursor: pointer; }
+              .btn-cancel { background: #6b7280; }
+              h2 { color: #374151; margin-bottom: 20px; }
+              p { color: #6b7280; line-height: 1.5; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h2>구독을 해지하시겠습니까?</h2>
+              <p><strong>${subscriber.email}</strong><br/>
+              더 이상 LinguaLetter 뉴스레터를 받지 않으시겠습니까?<br/>
+              언제든 다시 구독하실 수 있습니다.</p>
+              <div style="margin-top: 30px;">
+                <form method="POST" action="/newsletter/unsubscribe/${token}" style="display: inline;">
+                  <button type="submit" class="btn">구독 해지하기</button>
+                </form>
+                <a href="/" class="btn btn-cancel">취소</a>
+              </div>
+            </div>
+          </body>
+        </html>
+      `);
+    } catch (error: any) {
+      return reply.code(500).type('text/html').send(`
+        <!DOCTYPE html>
+        <html>
+          <head><meta charset="utf-8"><title>오류</title></head>
+          <body style="font-family: sans-serif; text-align: center; padding: 50px;">
+            <h2>오류가 발생했습니다</h2>
+            <p>${error.message}</p>
+          </body>
+        </html>
+      `);
+    }
+  });
+
+  // 구독 해지 처리 (POST)
+  app.post('/newsletter/unsubscribe/:token', async (request: any, reply) => {
+    try {
+      const { unsubscribeNewsletter } = await import('./services/newsletterService');
+      const result = await unsubscribeNewsletter(request.params.token);
+      
+      return reply.type('text/html').send(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>LinguaLetter - 구독 해지 완료</title>
+            <style>
+              body { font-family: -apple-system, sans-serif; text-align: center; padding: 50px; background: #fafafa; }
+              .container { max-width: 500px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+              .success { color: #059669; font-size: 18px; margin: 20px 0; }
+              .btn { background: #000; color: #fff; text-decoration: none; padding: 15px 30px; border-radius: 8px; display: inline-block; margin-top: 20px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h2>구독이 해지되었습니다</h2>
+              <div class="success">앞으로 뉴스레터를 받지 않으시게 됩니다.<br/>언제든 다시 구독하실 수 있습니다.</div>
+              <a href="/subscription" class="btn">다시 구독하기</a>
+              <a href="/" class="btn" style="background: #6b7280; margin-left: 10px;">홈으로 가기</a>
+            </div>
+          </body>
+        </html>
+      `);
+    } catch (error: any) {
+      return reply.code(400).type('text/html').send(`
+        <!DOCTYPE html>
+        <html>
+          <head><meta charset="utf-8"><title>오류</title></head>
+          <body style="font-family: sans-serif; text-align: center; padding: 50px;">
+            <h2>구독 해지 중 오류가 발생했습니다</h2>
             <p>${error.message}</p>
           </body>
         </html>

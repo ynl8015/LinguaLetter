@@ -195,9 +195,27 @@ export const typeDefs = `#graphql
     message: String
   }
 
+  type SubscriptionStatus {
+    isSubscribed: Boolean!
+    subscribedAt: String
+    confirmedAt: String
+  }
+
+  type UnsubscribeResult implements Result {
+    success: Boolean!
+    error: String
+    message: String
+  }
+
   type DeleteResult implements Result {
     success: Boolean!
     error: String
+  }
+
+  type DeleteAccountResult implements Result {
+    success: Boolean!
+    error: String
+    message: String
   }
 
   # Queries
@@ -217,6 +235,9 @@ export const typeDefs = `#graphql
     
     # 특정 세션 피드백
     sessionFeedback(sessionId: String!): FeedbackAnalysis
+    
+    # 구독 상태 조회
+    mySubscriptionStatus: SubscriptionStatus
   }
 
   # Mutations
@@ -241,11 +262,16 @@ export const typeDefs = `#graphql
     
     # 뉴스레터
     subscribeNewsletter(email: String!): SubscriptionResult!
+    unsubscribeNewsletter(email: String!): UnsubscribeResult!
+    unsubscribeByToken(token: String!): UnsubscribeResult!
     
     # 사용자 통계 업데이트
     updateMyStats(messagesCount: Int!): UserStats!
 
     # 뉴스레터 보내기
     sendNewsletterToAllSubscribers(newsId: String!): NewsletterSendResult!
+    
+    # 계정 삭제
+    deleteAccount: DeleteAccountResult!
   }
 `;

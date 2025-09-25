@@ -126,6 +126,16 @@ export const GET_MY_FEEDBACKS = gql`
   }
 `;
 
+export const GET_MY_SUBSCRIPTION_STATUS = gql`
+  query GetMySubscriptionStatus {
+    mySubscriptionStatus {
+      isSubscribed
+      subscribedAt
+      confirmedAt
+    }
+  }
+`;
+
 // 뉴스 관련 쿼리
 export const GET_LATEST_NEWS = gql`
   query GetLatestNews {
@@ -283,6 +293,26 @@ export const SUBSCRIBE_NEWSLETTER = gql`
   }
 `;
 
+export const UNSUBSCRIBE_NEWSLETTER = gql`
+  mutation UnsubscribeNewsletter($email: String!) {
+    unsubscribeNewsletter(email: $email) {
+      success
+      error
+      message
+    }
+  }
+`;
+
+export const UNSUBSCRIBE_BY_TOKEN = gql`
+  mutation UnsubscribeByToken($token: String!) {
+    unsubscribeByToken(token: $token) {
+      success
+      error
+      message
+    }
+  }
+`;
+
 // 관리자 전용 뮤테이션
 export const GENERATE_DAILY_NEWS = gql`
   mutation GenerateDailyNews {
@@ -340,6 +370,16 @@ export const DELETE_NEWS = gql`
   mutation DeleteNews($id: String!) {
     deleteNews(id: $id) {
       success
+    }
+  }
+`;
+
+export const DELETE_ACCOUNT = gql`
+  mutation DeleteAccount {
+    deleteAccount {
+      success
+      error
+      message
     }
   }
 `;

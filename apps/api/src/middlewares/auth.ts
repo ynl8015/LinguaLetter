@@ -23,6 +23,25 @@ export async function createContext(request: any) {
       const token = authHeader.substring(7);
       try {
         const decoded = verifyToken(token);
+        
+        // 토큰 블랙리스트 확인
+        const tokenId = `${decoded.userId}_${decoded.iat}`;
+        const invalidatedToken = await prisma.invalidatedToken.findUnique({
+          where: { tokenId }
+        });
+        
+        if (invalidatedToken) {
+          console.log('Token is invalidated:', invalidatedToken.reason);
+          // 만료된 블랙리스트 항목 정리 (토큰이 이미 만료되었다면)
+          if (invalidatedToken.expiresAt < new Date()) {
+            await prisma.invalidatedToken.delete({
+              where: { tokenId }
+            });
+          } else {
+            return { user: null, prisma };
+          }
+        }
+        
         user = await prisma.user.findUnique({
           where: { id: decoded.userId }
         });

@@ -197,6 +197,75 @@ function createConfirmationTemplate(confirmUrl: string) {
 }
 
 /**
+ * 구독 해지
+ */
+export async function unsubscribeNewsletter(token: string) {
+  const subscriber = await prisma.newsletterSubscriber.findUnique({
+    where: { unsubscribeToken: token }
+  });
+
+  if (!subscriber) {
+    throw new Error("유효하지 않은 구독 해지 링크입니다.");
+  }
+
+  if (!subscriber.isActive) {
+    return { success: true, message: "이미 구독이 해지된 상태입니다." };
+  }
+
+  await prisma.newsletterSubscriber.update({
+    where: { unsubscribeToken: token },
+    data: {
+      isActive: false,
+      unsubscribedAt: new Date()
+    }
+  });
+
+  return { success: true, message: "구독이 성공적으로 해지되었습니다." };
+}
+
+/**
+ * 사용자별 구독 상태 조회
+ */
+export async function getUserSubscriptionStatus(email: string) {
+  const subscriber = await prisma.newsletterSubscriber.findUnique({
+    where: { email }
+  });
+
+  return {
+    isSubscribed: subscriber?.isActive || false,
+    subscribedAt: subscriber?.subscribedAt || null,
+    confirmedAt: subscriber?.confirmedAt || null
+  };
+}
+
+/**
+ * 사용자 구독 해지 (이메일로)
+ */
+export async function unsubscribeByEmail(email: string) {
+  const subscriber = await prisma.newsletterSubscriber.findUnique({
+    where: { email }
+  });
+
+  if (!subscriber) {
+    throw new Error("해당 이메일로 구독된 내역이 없습니다.");
+  }
+
+  if (!subscriber.isActive) {
+    return { success: true, message: "이미 구독이 해지된 상태입니다." };
+  }
+
+  await prisma.newsletterSubscriber.update({
+    where: { email },
+    data: {
+      isActive: false,
+      unsubscribedAt: new Date()
+    }
+  });
+
+  return { success: true, message: "구독이 성공적으로 해지되었습니다." };
+}
+
+/**
  * 뉴스레터 이메일 템플릿
  */
 function createNewsletterTemplate(news, unsubscribeUrl) {
