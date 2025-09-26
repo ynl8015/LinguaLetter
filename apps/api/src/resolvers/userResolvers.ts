@@ -47,11 +47,14 @@ export const userResolvers = {
         throw new Error('User not found or token invalid');
       }
       
+      // JWT 토큰에서 디코딩된 사용자 ID 사용 (userId 또는 id)
+      const userId = (user as any).userId || user.id;
+      
       // 임시 토큰인 경우 제한적 정보만 반환
       if (tempUser) {
         console.log('Returning temp user info for:', user.email);
         return {
-          id: user.id,
+          id: userId,
           email: user.email,
           name: user.name,
           picture: user.picture,
@@ -64,22 +67,22 @@ export const userResolvers = {
       
       // 사용자가 실제로 DB에 존재하는지 다시 확인 (계정 삭제 후에도 토큰이 남아있을 수 있음)
       const existingUser = await prisma.user.findUnique({
-        where: { id: user.id }
+        where: { id: userId }
       });
       
       if (!existingUser) {
-        console.log('User not found in database:', user.id);
+        console.log('User not found in database:', userId);
         throw new Error('User account has been deleted');
       }
       
       // 동의서 확인 - 새로 가입한 사용자나 재가입한 사용자는 동의서가 없을 수 있음
       const userConsent = await prisma.userConsent.findFirst({
-        where: { userId: user.id },
+        where: { userId: userId },
         orderBy: { createdAt: 'desc' }
       });
       
       if (!userConsent) {
-        console.log(`No consent found for user ${user.id} (${user.email}). User needs to complete consent process.`);
+        console.log(`No consent found for user ${userId} (${user.email}). User needs to complete consent process.`);
         // 동의서가 없는 경우 오류를 던져서 프론트엔드에서 재로그인하도록 유도
         throw new Error('Consent not found - please login again');
       }
@@ -92,7 +95,7 @@ export const userResolvers = {
           !userConsent.privacyAccepted ||
           userConsent.termsVersion !== TERMS_VERSION ||
           userConsent.privacyVersion !== PRIVACY_VERSION) {
-        console.log(`Consent expired for user ${user.id}. Terms: ${userConsent.termsVersion}/${TERMS_VERSION}, Privacy: ${userConsent.privacyVersion}/${PRIVACY_VERSION}`);
+        console.log(`Consent expired for user ${userId}. Terms: ${userConsent.termsVersion}/${TERMS_VERSION}, Privacy: ${userConsent.privacyVersion}/${PRIVACY_VERSION}`);
         throw new Error('Consent expired - please login again');
       }
       
@@ -105,7 +108,7 @@ export const userResolvers = {
 
     myStats: async (_: any, __: any, { user, tempUser, prisma }: Context) => {
       const currentUser = requireFullAuth(user, tempUser);
-      const userId = currentUser.userId || currentUser.id;
+      const userId = (currentUser as any).userId || currentUser.id;
       const result = await prisma.userStats.findUnique({
         where: { userId: userId }
       });
@@ -122,7 +125,7 @@ export const userResolvers = {
 
     mySessions: async (_: any, { limit = 10 }: { limit?: number }, { user, tempUser, prisma }: Context) => {
       const currentUser = requireFullAuth(user, tempUser);
-      const userId = currentUser.userId || currentUser.id;
+      const userId = (currentUser as any).userId || currentUser.id;
       const results = await prisma.session.findMany({
         where: { userId: userId },
         orderBy: { createdAt: 'desc' },
@@ -136,7 +139,7 @@ export const userResolvers = {
 
     myFeedbacks: async (_: any, { limit = 10 }: { limit?: number }, { user, tempUser, prisma }: Context) => {
       const currentUser = requireFullAuth(user, tempUser);
-      const userId = currentUser.userId || currentUser.id;
+      const userId = (currentUser as any).userId || currentUser.id;
       const results = await prisma.feedbackAnalysis.findMany({
         where: { userId: userId },
         orderBy: { createdAt: 'desc' },
@@ -155,7 +158,7 @@ export const userResolvers = {
       const currentUser = requireAuth(user);
       
       // JWT 토큰에서 디코딩된 사용자 ID 사용 (userId 또는 id)
-      const userId = currentUser.userId || currentUser.id;
+      const userId = (currentUser as any).userId || currentUser.id;
       
       console.log('Submitting consent for user:', userId);
       
@@ -201,7 +204,7 @@ export const userResolvers = {
 
     updateMyStats: async (_: any, { messagesCount }: { messagesCount: number }, { user, tempUser, prisma }: Context) => {
       const currentUser = requireFullAuth(user, tempUser);
-      const userId = currentUser.userId || currentUser.id;
+      const userId = (currentUser as any).userId || currentUser.id;
       
       try {
         const result = await prisma.userStats.update({
@@ -250,7 +253,7 @@ export const userResolvers = {
 
     deleteAccount: async (_: any, __: any, { user, tempUser, prisma, request }: Context) => {
       const currentUser = requireFullAuth(user, tempUser);
-      const userId = currentUser.userId || currentUser.id;
+      const userId = (currentUser as any).userId || currentUser.id;
       
       console.log('Deleting account for user:', userId);
       
