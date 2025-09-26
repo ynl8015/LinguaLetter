@@ -105,8 +105,9 @@ export const userResolvers = {
 
     myStats: async (_: any, __: any, { user, tempUser, prisma }: Context) => {
       const currentUser = requireFullAuth(user, tempUser);
+      const userId = currentUser.userId || currentUser.id;
       const result = await prisma.userStats.findUnique({
-        where: { userId: currentUser.id }
+        where: { userId: userId }
       });
       if (result) {
         return {
@@ -121,8 +122,9 @@ export const userResolvers = {
 
     mySessions: async (_: any, { limit = 10 }: { limit?: number }, { user, tempUser, prisma }: Context) => {
       const currentUser = requireFullAuth(user, tempUser);
+      const userId = currentUser.userId || currentUser.id;
       const results = await prisma.session.findMany({
-        where: { userId: currentUser.id },
+        where: { userId: userId },
         orderBy: { createdAt: 'desc' },
         take: limit
       });
@@ -134,8 +136,9 @@ export const userResolvers = {
 
     myFeedbacks: async (_: any, { limit = 10 }: { limit?: number }, { user, tempUser, prisma }: Context) => {
       const currentUser = requireFullAuth(user, tempUser);
+      const userId = currentUser.userId || currentUser.id;
       const results = await prisma.feedbackAnalysis.findMany({
-        where: { userId: currentUser.id },
+        where: { userId: userId },
         orderBy: { createdAt: 'desc' },
         take: limit
       });
@@ -198,10 +201,11 @@ export const userResolvers = {
 
     updateMyStats: async (_: any, { messagesCount }: { messagesCount: number }, { user, tempUser, prisma }: Context) => {
       const currentUser = requireFullAuth(user, tempUser);
+      const userId = currentUser.userId || currentUser.id;
       
       try {
         const result = await prisma.userStats.update({
-          where: { userId: currentUser.id },
+          where: { userId: userId },
           data: {
             totalSessions: { increment: 1 },
             totalMessages: { increment: messagesCount },
@@ -223,7 +227,7 @@ export const userResolvers = {
         try {
           const result = await prisma.userStats.create({
             data: {
-              userId: currentUser.id,
+              userId: userId,
               totalSessions: 1,
               totalMessages: messagesCount,
               streakDays: 1,
@@ -246,8 +250,9 @@ export const userResolvers = {
 
     deleteAccount: async (_: any, __: any, { user, tempUser, prisma, request }: Context) => {
       const currentUser = requireFullAuth(user, tempUser);
+      const userId = currentUser.userId || currentUser.id;
       
-      console.log('Deleting account for user:', currentUser.id);
+      console.log('Deleting account for user:', userId);
       
       try {
         // 현재 토큰을 블랙리스트에 추가
@@ -261,7 +266,7 @@ export const userResolvers = {
             
             await prisma.invalidatedToken.create({
               data: {
-                userId: currentUser.id,
+                userId: userId,
                 tokenId,
                 reason: 'account_deleted',
                 expiresAt
