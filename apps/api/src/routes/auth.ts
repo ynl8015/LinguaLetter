@@ -25,7 +25,7 @@ async function authRoutes(fastify: FastifyInstance) {
       }
       
       // 쿠키에 refresh token 설정 (httpOnly, secure)
-      reply.setCookie('refreshToken', result.refreshToken, {
+      reply.setCookie('refreshToken', result.refreshToken!, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -63,7 +63,7 @@ async function authRoutes(fastify: FastifyInstance) {
         };
       }
       
-      reply.setCookie('refreshToken', result.refreshToken, {
+      reply.setCookie('refreshToken', result.refreshToken!, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -95,10 +95,10 @@ async function authRoutes(fastify: FastifyInstance) {
       // Google OAuth 처리 로직 (기존과 동일하지만 새로운 상태 처리)
       const result = await handleGoogleAuth({
         authCode: code,
-        redirectUri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:4000/auth/google/callback'
+        redirectUri: process.env.GOOGLE_REDIRECT_URI! || 'http://localhost:4000/auth/google/callback'
       } as any);
 
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const frontendUrl = process.env.FRONTEND_URL! || 'http://localhost:3000';
       
       if (result.status === 'CONSENT_REQUIRED') {
         const params = new URLSearchParams({
@@ -110,7 +110,7 @@ async function authRoutes(fastify: FastifyInstance) {
       }
       
       // 성공한 경우 refresh token 쿠키 설정
-      reply.setCookie('refreshToken', result.refreshToken, {
+      reply.setCookie('refreshToken', result.refreshToken!, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -124,7 +124,7 @@ async function authRoutes(fastify: FastifyInstance) {
       });
       return reply.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
     } catch (error: any) {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const frontendUrl = process.env.FRONTEND_URL! || 'http://localhost:3000';
       return reply.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent(error.message)}`);
     }
   });
@@ -140,10 +140,10 @@ async function authRoutes(fastify: FastifyInstance) {
     try {
       const result = await handleKakaoAuth({
         authCode: code,
-        redirectUri: process.env.KAKAO_REDIRECT_URI || 'http://localhost:4000/auth/kakao/callback'
+        redirectUri: process.env.KAKAO_REDIRECT_URI! || 'http://localhost:4000/auth/kakao/callback'
       });
 
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const frontendUrl = process.env.FRONTEND_URL! || 'http://localhost:3000';
       
       if (result.status === 'CONSENT_REQUIRED') {
         const params = new URLSearchParams({
@@ -154,7 +154,7 @@ async function authRoutes(fastify: FastifyInstance) {
         return reply.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
       }
       
-      reply.setCookie('refreshToken', result.refreshToken, {
+      reply.setCookie('refreshToken', result.refreshToken!, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -169,7 +169,7 @@ async function authRoutes(fastify: FastifyInstance) {
       return reply.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
 
     } catch (error: any) {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const frontendUrl = process.env.FRONTEND_URL! || 'http://localhost:3000';
       return reply.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent(error.message)}`);
     }
   });
@@ -196,7 +196,7 @@ async function authRoutes(fastify: FastifyInstance) {
       const result = await completeRegistrationAfterConsent(decoded.userId);
       
       // 쿠키에 refresh token 설정
-      reply.setCookie('refreshToken', result.refreshToken, {
+      reply.setCookie('refreshToken', result.refreshToken!, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',

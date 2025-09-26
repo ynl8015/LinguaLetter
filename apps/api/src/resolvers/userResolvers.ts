@@ -1,6 +1,7 @@
 // resolvers/userResolvers.ts
 import { Context } from '../types';
 import { requireAuth, requireFullAuth, verifyToken } from '../middlewares/auth';
+import type { User, Session, FeedbackAnalysis, UserConsent, UserStats } from '@prisma/client';
 
 export const userResolvers = {
   User: {
@@ -23,7 +24,7 @@ export const userResolvers = {
         where: { userId: parent.id },
         orderBy: { createdAt: 'desc' }
       });
-      return results.map(result => ({
+      return results.map((result: Session) => ({
         ...result,
         createdAt: result.createdAt.toISOString()
       }));
@@ -33,7 +34,7 @@ export const userResolvers = {
         where: { userId: parent.id },
         orderBy: { createdAt: 'desc' }
       });
-      return results.map(result => ({
+      return results.map((result: FeedbackAnalysis) => ({
         ...result,
         createdAt: result.createdAt.toISOString()
       }));
@@ -125,7 +126,7 @@ export const userResolvers = {
         orderBy: { createdAt: 'desc' },
         take: limit
       });
-      return results.map(result => ({
+      return results.map((result: Session) => ({
         ...result,
         createdAt: result.createdAt.toISOString()
       }));
@@ -138,7 +139,7 @@ export const userResolvers = {
         orderBy: { createdAt: 'desc' },
         take: limit
       });
-      return results.map(result => ({
+      return results.map((result: FeedbackAnalysis) => ({
         ...result,
         createdAt: result.createdAt.toISOString()
       }));
@@ -270,7 +271,7 @@ export const userResolvers = {
         }
         
         // 트랜잭션으로 모든 관련 데이터 삭제
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: any) => {
           // 1. 피드백 분석 데이터 삭제
           const deletedFeedbacks = await tx.feedbackAnalysis.deleteMany({
             where: { userId: currentUser.id }

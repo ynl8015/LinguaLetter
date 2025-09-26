@@ -1,12 +1,14 @@
-import cron from 'node-cron';
+import { schedule, ScheduledTask } from 'node-cron';
 import { generateDailyNews } from './newsService';
 import { sendNewsletterToAllSubscribers } from './newsletterService';
 
 let latestNewsId: string | null = null;
+let newsTask: ScheduledTask | null = null;
+let newsletterTask: ScheduledTask | null = null;
 
 export function startScheduler() {
   // 매일 오전 12시 30분에 뉴스 생성
-  cron.schedule('30 0 * * *', async () => {
+  newsTask = schedule('30 0 * * *', async () => {
     try {
       const result = await generateDailyNews();
       if (result.success && result.data?.id) {
@@ -21,7 +23,7 @@ export function startScheduler() {
   });
 
   // 매일 오전 6시에 뉴스레터 발송
-  cron.schedule('0 6 * * *', async () => {
+  newsletterTask = schedule('0 6 * * *', async () => {
     try {
       if (latestNewsId) {
         await sendNewsletterToAllSubscribers(latestNewsId);
@@ -38,6 +40,13 @@ export function startScheduler() {
 }
 
 export function stopScheduler() {
-  cron.stop();
+  if (newsTask) {
+    newsTask.stop();
+    newsTask = null;
+  }
+  if (newsletterTask) {
+    newsletterTask.stop();
+    newsletterTask = null;
+  }
   console.log('Scheduler stopped');
 }
