@@ -24,7 +24,7 @@ async function start() {
   // CORS 설정
   await app.register(require('@fastify/cors'), {
     origin: process.env.NODE_ENV === 'production' 
-      ? ['https://yourdomain.com'] 
+      ? ['https://lingualetter.ai.kr/'] 
       : ['http://localhost:3000', 'http://localhost:5173'],
     credentials: true
   });
