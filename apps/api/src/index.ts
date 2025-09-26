@@ -316,7 +316,7 @@ async function start() {
 
     try {
       const redirectUri = process.env.KAKAO_REDIRECT_URI || (process.env.NODE_ENV === 'production' 
-        ? 'https://lingualetter.ai.kr/auth/kakao/callback' 
+        ? 'https://lingualetterapi-production.up.railway.app/auth/kakao/callback' 
         : 'http://localhost:4000/auth/kakao/callback');
       
       console.log('Kakao redirect URI:', redirectUri);

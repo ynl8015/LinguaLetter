@@ -141,7 +141,7 @@ async function authRoutes(fastify: FastifyInstance) {
       const result = await handleKakaoAuth({
         authCode: code,
         redirectUri: process.env.KAKAO_REDIRECT_URI! || (process.env.NODE_ENV === 'production' 
-          ? 'https://lingualetter.ai.kr/auth/kakao/callback' 
+          ? 'https://lingualetterapi-production.up.railway.app/auth/kakao/callback' 
           : 'http://localhost:4000/auth/kakao/callback')
       });
 
