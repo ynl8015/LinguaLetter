@@ -112,7 +112,8 @@ export async function sendNewsletterToAllSubscribers(newsId: string) {
     for (const subscriber of subscribers) {
       try {
         // 프론트엔드 GraphQL 페이지로 변경 (REST API 대신)
-        const unsubscribeUrl = `http://localhost:3000/newsletter/unsubscribe/${subscriber.unsubscribeToken}`;
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const unsubscribeUrl = `${frontendUrl}/newsletter/unsubscribe/${subscriber.unsubscribeToken}`;
         
         await transporter.sendMail({
           from: `"LinguaLetter" <${process.env.EMAIL_USER}>`,
@@ -146,19 +147,38 @@ export async function sendNewsletterToAllSubscribers(newsId: string) {
  * 구독 확인 메일 발송
  */
 async function sendConfirmationEmail(email: string, confirmToken: string) {
+  console.log('=== 확인 이메일 발송 시작 ===');
+  console.log('이메일:', email);
+  console.log('확인 토큰:', confirmToken);
+  
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.error('이메일 환경변수 누락:', {
+      EMAIL_USER: !!process.env.EMAIL_USER,
+      EMAIL_PASS: !!process.env.EMAIL_PASS
+    });
     throw new Error('이메일 환경변수가 설정되지 않았습니다.');
   }
 
   const transporter = createMailTransport();
-  const confirmUrl = `http://localhost:3000/newsletter/confirm/${confirmToken}`;
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const confirmUrl = `${frontendUrl}/newsletter/confirm/${confirmToken}`;
+  
+  console.log('확인 URL:', confirmUrl);
+  console.log('프론트엔드 URL:', frontendUrl);
 
-  await transporter.sendMail({
-    from: `"LinguaLetter" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: "LinguaLetter 구독을 완료해주세요!",
-    html: createConfirmationTemplate(confirmUrl)
-  });
+  try {
+    const result = await transporter.sendMail({
+      from: `"LinguaLetter" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "LinguaLetter 구독을 완료해주세요!",
+      html: createConfirmationTemplate(confirmUrl)
+    });
+    
+    console.log('확인 이메일 발송 성공:', result.messageId);
+  } catch (error) {
+    console.error('확인 이메일 발송 실패:', error);
+    throw error;
+  }
 }
 
 /**
@@ -319,7 +339,7 @@ function createNewsletterTemplate(news: any, unsubscribeUrl: string) {
       <p>${news.reason}</p>
 
       <div style="text-align:center;">
-        <a href="http://localhost:3000/teacher" class="cta-btn">이 주제로 선생님과 대화해보기</a>
+        <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/teacher" class="cta-btn">이 주제로 선생님과 대화해보기</a>
       </div>
 
       <div class="footer">
