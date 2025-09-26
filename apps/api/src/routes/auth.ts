@@ -106,7 +106,7 @@ async function authRoutes(fastify: FastifyInstance) {
           status: 'CONSENT_REQUIRED',
           success: result.success.toString()
         });
-        return reply.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
+        return reply.redirect(`${frontendUrl}/login?kakao_consent=true&token=${result.token}&status=CONSENT_REQUIRED`);
       }
       
       // 성공한 경우 refresh token 쿠키 설정
@@ -122,10 +122,10 @@ async function authRoutes(fastify: FastifyInstance) {
         status: 'SUCCESS',
         success: result.success.toString()
       });
-      return reply.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
+      return reply.redirect(`${frontendUrl}/login?token=${result.token}&status=SUCCESS`);
     } catch (error: any) {
       const frontendUrl = process.env.FRONTEND_URL! || 'http://localhost:3000';
-      return reply.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent(error.message)}`);
+      return reply.redirect(`${frontendUrl}/login?error=${encodeURIComponent(error.message)}`);
     }
   });
 
@@ -153,7 +153,7 @@ async function authRoutes(fastify: FastifyInstance) {
           status: 'CONSENT_REQUIRED',
           success: result.success.toString()
         });
-        return reply.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
+        return reply.redirect(`${frontendUrl}/login?kakao_consent=true&token=${result.token}&status=CONSENT_REQUIRED`);
       }
       
       reply.setCookie('refreshToken', result.refreshToken!, {
@@ -168,11 +168,11 @@ async function authRoutes(fastify: FastifyInstance) {
         status: 'SUCCESS',
         success: result.success.toString()
       });
-      return reply.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
+      return reply.redirect(`${frontendUrl}/login?token=${result.token}&status=SUCCESS`);
 
     } catch (error: any) {
       const frontendUrl = process.env.FRONTEND_URL! || 'http://localhost:3000';
-      return reply.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent(error.message)}`);
+      return reply.redirect(`${frontendUrl}/login?error=${encodeURIComponent(error.message)}`);
     }
   });
 

@@ -335,7 +335,7 @@ async function start() {
           status: 'CONSENT_REQUIRED',
           success: result.success.toString()
         });
-        return reply.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
+        return reply.redirect(`${frontendUrl}/login?kakao_consent=true&token=${result.token}&status=CONSENT_REQUIRED`);
       }
       
       reply.setCookie('refreshToken', result.refreshToken!, cookieOpts);
@@ -345,11 +345,11 @@ async function start() {
         status: 'SUCCESS',
         success: result.success.toString()
       });
-      return reply.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
+      return reply.redirect(`${frontendUrl}/login?token=${result.token}&status=SUCCESS`);
 
     } catch (error: any) {
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      return reply.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent(error.message)}`);
+      return reply.redirect(`${frontendUrl}/login?error=${encodeURIComponent(error.message)}`);
     }
   });
 
