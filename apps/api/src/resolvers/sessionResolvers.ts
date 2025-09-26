@@ -2,6 +2,7 @@ import { Context } from '../types';
 import { requireAuth } from '../middlewares/auth';
 import { chatWithTeacher } from '../services/teacherService';
 import { analyzeFeedback } from '../services/feedbackService';
+import type { FeedbackAnalysis } from '@prisma/client';
 
 export const sessionResolvers = {
   Session: {
@@ -14,7 +15,7 @@ export const sessionResolvers = {
       const results = await prisma.feedbackAnalysis.findMany({
         where: { sessionId: parent.id }
       });
-      return results.map(result => ({
+      return results.map((result: FeedbackAnalysis) => ({
         ...result,
         createdAt: result.createdAt.toISOString()
       }));

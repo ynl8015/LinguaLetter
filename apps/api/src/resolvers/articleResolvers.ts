@@ -1,5 +1,6 @@
 import { Context } from '../types';
 import { generateDailyNews } from '../services/newsService';
+import type { Article } from '@prisma/client';
 
 export const articleResolvers = {
   Query: {
@@ -21,7 +22,7 @@ export const articleResolvers = {
         orderBy: { createdAt: 'desc' },
         take: limit
       });
-      return results.map(result => ({
+      return results.map((result: Article) => ({
         ...result,
         createdAt: result.createdAt.toISOString()
       }));
@@ -34,7 +35,7 @@ export const articleResolvers = {
         orderBy: { createdAt: 'desc' },
         take: limit
       });
-      return results.map(result => ({
+      return results.map((result: Article) => ({
         ...result,
         createdAt: result.createdAt.toISOString()
       }));
