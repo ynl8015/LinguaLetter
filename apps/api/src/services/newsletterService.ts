@@ -5,11 +5,21 @@ import prisma from '../db';
  * 이메일 전송을 위한 Transport를 생성합니다.
  */
 const createMailTransport = () => {
+  console.log('이메일 Transport 생성 중...');
+  console.log('EMAIL_USER:', process.env.EMAIL_USER);
+  console.log('EMAIL_PASS 길이:', process.env.EMAIL_PASS?.length);
+  
   return nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
+    },
+    // Gmail 보안 설정 추가
+    secure: true,
+    port: 465,
+    tls: {
+      rejectUnauthorized: false
     }
   });
 };
@@ -167,6 +177,11 @@ async function sendConfirmationEmail(email: string, confirmToken: string) {
   console.log('프론트엔드 URL:', frontendUrl);
 
   try {
+    console.log('이메일 발송 시도 중...');
+    console.log('발송자:', process.env.EMAIL_USER);
+    console.log('수신자:', email);
+    console.log('제목:', "LinguaLetter 구독을 완료해주세요!");
+    
     const result = await transporter.sendMail({
       from: `"LinguaLetter" <${process.env.EMAIL_USER}>`,
       to: email,
@@ -174,9 +189,19 @@ async function sendConfirmationEmail(email: string, confirmToken: string) {
       html: createConfirmationTemplate(confirmUrl)
     });
     
-    console.log('확인 이메일 발송 성공:', result.messageId);
+    console.log('확인 이메일 발송 성공!');
+    console.log('메시지 ID:', result.messageId);
+    console.log('응답:', result.response);
+    console.log('수락된 수신자:', result.accepted);
+    console.log('거부된 수신자:', result.rejected);
   } catch (error) {
     console.error('확인 이메일 발송 실패:', error);
+    console.error('에러 상세:', {
+      message: error.message,
+      code: error.code,
+      response: error.response,
+      responseCode: error.responseCode
+    });
     throw error;
   }
 }
