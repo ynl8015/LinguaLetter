@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useMutation } from '@apollo/client';
-import { DELETE_ACCOUNT } from '../graphql/apollo';
+import { DELETE_ACCOUNT } from '../lib/apollo';
 
 export default function AccountSettings() {
   const { user, logout } = useAuth();
@@ -19,7 +19,7 @@ export default function AccountSettings() {
     setIsDeleting(true);
     try {
       const result = await deleteAccount();
-      
+
       if (result.data?.deleteAccount?.success) {
         alert(result.data.deleteAccount.message || '계정이 성공적으로 삭제되었습니다.');
         await logout();
