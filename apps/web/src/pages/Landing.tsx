@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import laptopImage from "../assets/Laptop.png";
+import laptopImage from "../assets/laptop.png";
 import emmaImage from "../assets/emma.png";
 import steveImage from "../assets/steve.png";
 
