@@ -457,7 +457,6 @@ export default function Login() {
                   text="signin_with"
                   shape="rectangular"
                   width="100%"
-                  disabled={loading}
                 />
               </div>
 
