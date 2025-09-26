@@ -317,7 +317,9 @@ async function start() {
     try {
       const result = await handleKakaoAuth({
         authCode: code,
-        redirectUri: process.env.KAKAO_REDIRECT_URI || 'http://localhost:4000/auth/kakao/callback'
+        redirectUri: process.env.KAKAO_REDIRECT_URI || (process.env.NODE_ENV === 'production' 
+          ? 'https://lingualetter.ai.kr/auth/kakao/callback' 
+          : 'http://localhost:4000/auth/kakao/callback')
       });
 
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';

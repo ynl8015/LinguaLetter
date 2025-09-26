@@ -151,11 +151,14 @@ export const userResolvers = {
       // 임시 토큰도 허용 (동의서 제출을 위해)
       const currentUser = requireAuth(user);
       
-      console.log('Submitting consent for user:', currentUser.id);
+      // JWT 토큰에서 디코딩된 사용자 ID 사용 (userId 또는 id)
+      const userId = currentUser.userId || currentUser.id;
+      
+      console.log('Submitting consent for user:', userId);
       
       // 이미 동의한 사용자인지 확인
       const existingConsent = await prisma.userConsent.findFirst({
-        where: { userId: currentUser.id },
+        where: { userId: userId },
         orderBy: { createdAt: 'desc' }
       });
       
@@ -165,7 +168,7 @@ export const userResolvers = {
           existingConsent.privacyAccepted &&
           existingConsent.termsVersion === input.termsVersion &&
           existingConsent.privacyVersion === input.privacyVersion) {
-        console.log('Consent already exists for user:', currentUser.id);
+        console.log('Consent already exists for user:', userId);
         return {
           ...existingConsent,
           createdAt: existingConsent.createdAt.toISOString()
@@ -175,7 +178,7 @@ export const userResolvers = {
       // 새 동의서 생성
       const result = await prisma.userConsent.create({
         data: {
-          userId: currentUser.id,
+          userId: userId,
           termsAccepted: input.termsAccepted,
           privacyAccepted: input.privacyAccepted,
           newsletterOptIn: input.newsletterOptIn,
@@ -185,7 +188,7 @@ export const userResolvers = {
         }
       });
       
-      console.log('Consent created for user:', currentUser.id);
+      console.log('Consent created for user:', userId);
       
       return {
         ...result,
