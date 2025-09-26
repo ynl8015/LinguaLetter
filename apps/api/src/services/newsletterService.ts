@@ -194,13 +194,13 @@ async function sendConfirmationEmail(email: string, confirmToken: string) {
     console.log('응답:', result.response);
     console.log('수락된 수신자:', result.accepted);
     console.log('거부된 수신자:', result.rejected);
-  } catch (error) {
+  } catch (error: any) {
     console.error('확인 이메일 발송 실패:', error);
     console.error('에러 상세:', {
-      message: error.message,
-      code: error.code,
-      response: error.response,
-      responseCode: error.responseCode
+      message: error?.message,
+      code: error?.code,
+      response: error?.response,
+      responseCode: error?.responseCode
     });
     throw error;
   }
