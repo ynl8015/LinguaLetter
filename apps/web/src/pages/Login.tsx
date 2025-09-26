@@ -503,7 +503,8 @@ export default function Login() {
                 />
               </div>
 
-              {/* Kakao Login */}
+              {/* Kakao Login - Temporarily Disabled */}
+              {/* 
               <button
                 onClick={handleKakaoLogin}
                 disabled={loading}
@@ -514,6 +515,7 @@ export default function Login() {
                 </svg>
                 {loading ? '로그인 중...' : '카카오로 시작하기'}
               </button>
+              */}
             </div>
 
             {loading && (
