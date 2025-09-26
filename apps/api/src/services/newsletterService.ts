@@ -9,18 +9,22 @@ const createMailTransport = () => {
   console.log('EMAIL_USER:', process.env.EMAIL_USER);
   console.log('EMAIL_PASS 길이:', process.env.EMAIL_PASS?.length);
   
+  // Gmail 앱 비밀번호 사용을 위한 설정
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // 587 포트는 secure: false
     auth: {
       user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
+      pass: process.env.EMAIL_PASS // 앱 비밀번호 사용
     },
-    // Gmail 보안 설정 추가
-    secure: true,
-    port: 465,
     tls: {
       rejectUnauthorized: false
-    }
+    },
+    // 연결 타임아웃 설정
+    connectionTimeout: 60000,
+    greetingTimeout: 30000,
+    socketTimeout: 60000
   });
 };
 
@@ -182,6 +186,11 @@ async function sendConfirmationEmail(email: string, confirmToken: string) {
     console.log('수신자:', email);
     console.log('제목:', "LinguaLetter 구독을 완료해주세요!");
     
+    // 연결 테스트
+    console.log('SMTP 연결 테스트 중...');
+    await transporter.verify();
+    console.log('SMTP 연결 성공!');
+    
     const result = await transporter.sendMail({
       from: `"LinguaLetter" <${process.env.EMAIL_USER}>`,
       to: email,
@@ -200,7 +209,8 @@ async function sendConfirmationEmail(email: string, confirmToken: string) {
       message: error?.message,
       code: error?.code,
       response: error?.response,
-      responseCode: error?.responseCode
+      responseCode: error?.responseCode,
+      command: error?.command
     });
     throw error;
   }
