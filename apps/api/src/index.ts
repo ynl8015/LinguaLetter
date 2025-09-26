@@ -315,11 +315,16 @@ async function start() {
     }
 
     try {
+      const redirectUri = process.env.KAKAO_REDIRECT_URI || (process.env.NODE_ENV === 'production' 
+        ? 'https://lingualetter.ai.kr/auth/kakao/callback' 
+        : 'http://localhost:4000/auth/kakao/callback');
+      
+      console.log('Kakao redirect URI:', redirectUri);
+      console.log('KAKAO_REDIRECT_URI env var:', process.env.KAKAO_REDIRECT_URI);
+      
       const result = await handleKakaoAuth({
         authCode: code,
-        redirectUri: process.env.KAKAO_REDIRECT_URI || (process.env.NODE_ENV === 'production' 
-          ? 'https://lingualetter.ai.kr/auth/kakao/callback' 
-          : 'http://localhost:4000/auth/kakao/callback')
+        redirectUri: redirectUri
       });
 
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
