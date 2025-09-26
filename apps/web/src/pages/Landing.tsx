@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import laptopImage from "../assets/laptop.png";
+// import laptopImage from "../assets/laptop.png"; // Cloudinary URL로 변경
 import emmaImage from "../assets/emma.png";
 import steveImage from "../assets/steve.png";
 
@@ -58,7 +58,7 @@ OPIc 스타일 피드백으로 시험을 위한 준비까지.
         return (
           <div className="relative flex justify-center">
             <img 
-              src={laptopImage} 
+              src="https://res.cloudinary.com/dahbfym6q/image/upload/v1758918301/laptop_mk1rzr.png" 
               alt="LinguaLetter Laptop" 
               className="w-full max-w-80 lg:max-w-96 h-auto object-contain drop-shadow-2xl"
             />
