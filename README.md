@@ -9,3 +9,5 @@
 - **데이터베이스**: PostgreSQL
 - **인증**: JWT
 - **모노레포**: Turborepo + pnpm
+
+### 1차 해결 버전 
