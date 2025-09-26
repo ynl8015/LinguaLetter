@@ -17,6 +17,7 @@ export interface ChatMessage {
 
 export interface Context {
   user?: User;
+  tempUser?: boolean;
   prisma: any;
   request?: any;
 }

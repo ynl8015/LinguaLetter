@@ -50,7 +50,7 @@ export const userResolvers = {
       if (tempUser) {
         console.log('Returning temp user info for:', user.email);
         return {
-          id: user.userId,
+          id: user.id,
           email: user.email,
           name: user.name,
           picture: user.picture,
@@ -63,22 +63,22 @@ export const userResolvers = {
       
       // 사용자가 실제로 DB에 존재하는지 다시 확인 (계정 삭제 후에도 토큰이 남아있을 수 있음)
       const existingUser = await prisma.user.findUnique({
-        where: { id: user.userId }
+        where: { id: user.id }
       });
       
       if (!existingUser) {
-        console.log('User not found in database:', user.userId);
+        console.log('User not found in database:', user.id);
         throw new Error('User account has been deleted');
       }
       
       // 동의서 확인 - 새로 가입한 사용자나 재가입한 사용자는 동의서가 없을 수 있음
       const userConsent = await prisma.userConsent.findFirst({
-        where: { userId: user.userId },
+        where: { userId: user.id },
         orderBy: { createdAt: 'desc' }
       });
       
       if (!userConsent) {
-        console.log(`No consent found for user ${user.userId} (${user.email}). User needs to complete consent process.`);
+        console.log(`No consent found for user ${user.id} (${user.email}). User needs to complete consent process.`);
         // 동의서가 없는 경우 오류를 던져서 프론트엔드에서 재로그인하도록 유도
         throw new Error('Consent not found - please login again');
       }
@@ -91,7 +91,7 @@ export const userResolvers = {
           !userConsent.privacyAccepted ||
           userConsent.termsVersion !== TERMS_VERSION ||
           userConsent.privacyVersion !== PRIVACY_VERSION) {
-        console.log(`Consent expired for user ${user.userId}. Terms: ${userConsent.termsVersion}/${TERMS_VERSION}, Privacy: ${userConsent.privacyVersion}/${PRIVACY_VERSION}`);
+        console.log(`Consent expired for user ${user.id}. Terms: ${userConsent.termsVersion}/${TERMS_VERSION}, Privacy: ${userConsent.privacyVersion}/${PRIVACY_VERSION}`);
         throw new Error('Consent expired - please login again');
       }
       
@@ -105,7 +105,7 @@ export const userResolvers = {
     myStats: async (_: any, __: any, { user, tempUser, prisma }: Context) => {
       const currentUser = requireFullAuth(user, tempUser);
       const result = await prisma.userStats.findUnique({
-        where: { userId: currentUser.userId }
+        where: { userId: currentUser.id }
       });
       if (result) {
         return {
@@ -121,7 +121,7 @@ export const userResolvers = {
     mySessions: async (_: any, { limit = 10 }: { limit?: number }, { user, tempUser, prisma }: Context) => {
       const currentUser = requireFullAuth(user, tempUser);
       const results = await prisma.session.findMany({
-        where: { userId: currentUser.userId },
+        where: { userId: currentUser.id },
         orderBy: { createdAt: 'desc' },
         take: limit
       });
@@ -134,7 +134,7 @@ export const userResolvers = {
     myFeedbacks: async (_: any, { limit = 10 }: { limit?: number }, { user, tempUser, prisma }: Context) => {
       const currentUser = requireFullAuth(user, tempUser);
       const results = await prisma.feedbackAnalysis.findMany({
-        where: { userId: currentUser.userId },
+        where: { userId: currentUser.id },
         orderBy: { createdAt: 'desc' },
         take: limit
       });
@@ -150,11 +150,11 @@ export const userResolvers = {
       // 임시 토큰도 허용 (동의서 제출을 위해)
       const currentUser = requireAuth(user);
       
-      console.log('Submitting consent for user:', currentUser.userId);
+      console.log('Submitting consent for user:', currentUser.id);
       
       // 이미 동의한 사용자인지 확인
       const existingConsent = await prisma.userConsent.findFirst({
-        where: { userId: currentUser.userId },
+        where: { userId: currentUser.id },
         orderBy: { createdAt: 'desc' }
       });
       
@@ -164,7 +164,7 @@ export const userResolvers = {
           existingConsent.privacyAccepted &&
           existingConsent.termsVersion === input.termsVersion &&
           existingConsent.privacyVersion === input.privacyVersion) {
-        console.log('Consent already exists for user:', currentUser.userId);
+        console.log('Consent already exists for user:', currentUser.id);
         return {
           ...existingConsent,
           createdAt: existingConsent.createdAt.toISOString()
@@ -174,7 +174,7 @@ export const userResolvers = {
       // 새 동의서 생성
       const result = await prisma.userConsent.create({
         data: {
-          userId: currentUser.userId,
+          userId: currentUser.id,
           termsAccepted: input.termsAccepted,
           privacyAccepted: input.privacyAccepted,
           newsletterOptIn: input.newsletterOptIn,
@@ -184,7 +184,7 @@ export const userResolvers = {
         }
       });
       
-      console.log('Consent created for user:', currentUser.userId);
+      console.log('Consent created for user:', currentUser.id);
       
       return {
         ...result,
@@ -197,7 +197,7 @@ export const userResolvers = {
       
       try {
         const result = await prisma.userStats.update({
-          where: { userId: currentUser.userId },
+          where: { userId: currentUser.id },
           data: {
             totalSessions: { increment: 1 },
             totalMessages: { increment: messagesCount },
@@ -219,7 +219,7 @@ export const userResolvers = {
         try {
           const result = await prisma.userStats.create({
             data: {
-              userId: currentUser.userId,
+              userId: currentUser.id,
               totalSessions: 1,
               totalMessages: messagesCount,
               streakDays: 1,
@@ -243,7 +243,7 @@ export const userResolvers = {
     deleteAccount: async (_: any, __: any, { user, tempUser, prisma, request }: Context) => {
       const currentUser = requireFullAuth(user, tempUser);
       
-      console.log('Deleting account for user:', currentUser.userId);
+      console.log('Deleting account for user:', currentUser.id);
       
       try {
         // 현재 토큰을 블랙리스트에 추가
@@ -257,13 +257,13 @@ export const userResolvers = {
             
             await prisma.invalidatedToken.create({
               data: {
-                userId: currentUser.userId,
+                userId: currentUser.id,
                 tokenId,
                 reason: 'account_deleted',
                 expiresAt
               }
             });
-            console.log('Token invalidated for user:', currentUser.userId);
+            console.log('Token invalidated for user:', currentUser.id);
           } catch (tokenError) {
             console.error('Token invalidation error:', tokenError);
           }
@@ -273,31 +273,31 @@ export const userResolvers = {
         await prisma.$transaction(async (tx) => {
           // 1. 피드백 분석 데이터 삭제
           const deletedFeedbacks = await tx.feedbackAnalysis.deleteMany({
-            where: { userId: currentUser.userId }
+            where: { userId: currentUser.id }
           });
           console.log(`Deleted ${deletedFeedbacks.count} feedbacks`);
 
           // 2. 세션 데이터 삭제
           const deletedSessions = await tx.session.deleteMany({
-            where: { userId: currentUser.userId }
+            where: { userId: currentUser.id }
           });
           console.log(`Deleted ${deletedSessions.count} sessions`);
 
           // 3. 사용자 동의 데이터 삭제 (중요!)
           const deletedConsents = await tx.userConsent.deleteMany({
-            where: { userId: currentUser.userId }
+            where: { userId: currentUser.id }
           });
           console.log(`Deleted ${deletedConsents.count} consents`);
 
           // 4. 사용자 통계 삭제
           const deletedStats = await tx.userStats.deleteMany({
-            where: { userId: currentUser.userId }
+            where: { userId: currentUser.id }
           });
           console.log(`Deleted ${deletedStats.count} stats`);
 
           // 5. 뉴스레터 구독 해지
           const userRecord = await tx.user.findUnique({
-            where: { id: currentUser.userId }
+            where: { id: currentUser.id }
           });
           
           if (userRecord?.email) {
@@ -310,9 +310,9 @@ export const userResolvers = {
 
           // 6. 최종적으로 사용자 계정 삭제
           await tx.user.delete({
-            where: { id: currentUser.userId }
+            where: { id: currentUser.id }
           });
-          console.log('User account deleted:', currentUser.userId);
+          console.log('User account deleted:', currentUser.id);
         });
         
         return {

@@ -9,8 +9,8 @@ export function startScheduler() {
   cron.schedule('30 0 * * *', async () => {
     try {
       const result = await generateDailyNews();
-      if (result.success && result.article?.id) {
-        latestNewsId = result.article.id;
+      if (result.success && result.data?.id) {
+        latestNewsId = result.data.id;
         console.log('News generated');
       }
     } catch (error) {
@@ -38,6 +38,6 @@ export function startScheduler() {
 }
 
 export function stopScheduler() {
-  cron.destroy();
+  cron.stop();
   console.log('Scheduler stopped');
 }
