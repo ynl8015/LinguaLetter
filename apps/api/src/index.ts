@@ -12,6 +12,17 @@ import { startScheduler } from './services/schedulerService';
 import prisma from './db';
 import jwt from 'jsonwebtoken';
 
+// Fastify 타입 확장
+declare module 'fastify' {
+  interface FastifyRequest {
+    cookies: { [key: string]: string };
+  }
+  interface FastifyReply {
+    setCookie(name: string, value: string, options?: any): this;
+    clearCookie(name: string, options?: any): this;
+  }
+}
+
 dotenv.config();
 
 async function start() {
@@ -21,12 +32,18 @@ async function start() {
     }
   });
 
-  // CORS 설정
+  // CORS 설정 - 환경변수 기반 + 프리뷰 도메인 허용
+  const FRONTEND = process.env.FRONTEND_URL || 'http://localhost:3000';
   await app.register(require('@fastify/cors'), {
-    origin: process.env.NODE_ENV === 'production' 
-      ? ['https://lingualetter.ai.kr/'] 
-      : ['http://localhost:3000', 'http://localhost:5173'],
-    credentials: true
+    origin: (origin: string | undefined, cb: (err: Error | null, allow?: boolean) => void) => {
+      const allow = [
+        FRONTEND,                         // e.g. https://lingualetter.ai.kr
+        'https://lingualetter.vercel.app' // 필요 시 프리뷰
+      ];
+      if (!origin || allow.includes(origin)) cb(null, true);
+      else cb(new Error('CORS blocked'), false);
+    },
+    credentials: true,
   });
 
   // 쿠키 지원 추가
@@ -34,6 +51,15 @@ async function start() {
     secret: process.env.COOKIE_SECRET || "my-secret-key",
     parseOptions: {}
   });
+
+  // 공통 쿠키 옵션 - 크로스사이트 요청을 위해 SameSite: 'none' + secure: true
+  const cookieOpts = {
+    httpOnly: true,
+    secure: true,           // 프로덕션은 true
+    sameSite: 'none' as const,
+    path: '/',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7일
+  };
 
   // ===== 인증 관련 REST 라우트들 =====
   
@@ -56,13 +82,8 @@ async function start() {
         };
       }
       
-      // 쿠키에 refresh token 설정 (httpOnly, secure)
-      reply.setCookie('refreshToken', result.refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7일
-      });
+      // 쿠키에 refresh token 설정
+      reply.setCookie('refreshToken', result.refreshToken!, cookieOpts);
       
       return {
         success: true,
@@ -95,12 +116,7 @@ async function start() {
         };
       }
       
-      reply.setCookie('refreshToken', result.refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000
-      });
+      reply.setCookie('refreshToken', result.refreshToken!, cookieOpts);
       
       return {
         success: true,
@@ -130,7 +146,7 @@ async function start() {
       }
       
       // 임시 토큰에서 사용자 ID 추출
-      const decoded = jwt.verify(tempToken, process.env.JWT_SECRET) as any;
+      const decoded = jwt.verify(tempToken, process.env.JWT_SECRET!) as any;
       
       if (decoded.type !== 'temp') {
         reply.status(400);
@@ -142,12 +158,7 @@ async function start() {
       const result = await completeRegistrationAfterConsent(decoded.userId);
       
       // 쿠키에 refresh token 설정
-      reply.setCookie('refreshToken', result.refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000
-      });
+      reply.setCookie('refreshToken', result.refreshToken, cookieOpts);
       
       console.log('Registration completed successfully');
       
@@ -267,7 +278,7 @@ async function start() {
         const token = authHeader.substring(7);
         
         try {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET) as any;
+          const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
           
           await prisma.invalidatedToken.create({
             data: {
@@ -320,12 +331,7 @@ async function start() {
         return reply.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
       }
       
-      reply.setCookie('refreshToken', result.refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000
-      });
+      reply.setCookie('refreshToken', result.refreshToken!, cookieOpts);
       
       const params = new URLSearchParams({
         token: result.token,

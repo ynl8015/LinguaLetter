@@ -436,7 +436,7 @@ export async function completeRegistrationAfterConsent(userId: string) {
 // 토큰 갱신
 export async function refreshAccessToken(refreshToken: string) {
   try {
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || 'your-refresh-secret') as any;
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!) as any;
     
     if (decoded.type !== 'refresh') {
       throw new Error('Invalid token type');
@@ -576,7 +576,7 @@ export async function handleDeleteUser(userId: string) {
 // 토큰 검증 함수 (동의서 상태도 함께 확인)
 export async function verifyAuthToken(token: string) {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
     
     // 임시 토큰인 경우 제한적 접근만 허용
     if (decoded.type === 'temp') {

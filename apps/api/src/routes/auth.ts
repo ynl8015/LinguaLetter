@@ -186,7 +186,7 @@ async function authRoutes(fastify: FastifyInstance) {
       }
       
       // 임시 토큰에서 사용자 ID 추출
-      const decoded = jwt.verify(tempToken, process.env.JWT_SECRET) as any;
+      const decoded = jwt.verify(tempToken, process.env.JWT_SECRET!) as any;
       
       if (decoded.type !== 'temp') {
         reply.status(400);
@@ -283,7 +283,7 @@ async function authRoutes(fastify: FastifyInstance) {
         const token = authHeader.substring(7);
         
         try {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET) as any;
+          const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
           
           await prisma.invalidatedToken.create({
             data: {

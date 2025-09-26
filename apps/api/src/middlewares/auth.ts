@@ -104,7 +104,7 @@ export function extractUserId(user: any) {
 // JWT 토큰 직접 검증 (서비스에서 사용)
 export function verifyToken(token: string) {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
     return decoded;
   } catch (error) {
     throw new Error('Invalid or expired token');
