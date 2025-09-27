@@ -23,6 +23,7 @@ import {
 } from 'react-icons/md';
 import emmaImage from '../assets/emma.png';
 import steveImage from '../assets/steve.png';
+import LoadingAnimation from '../components/LoadingAnimation';
 
 interface FeedbackData {
   id: string;
@@ -219,10 +220,7 @@ const handleSubscriptionToggle = async () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Navbar />
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto mb-4"></div>
-          <p className="text-gray-600">로딩 중...</p>
-        </div>
+        <LoadingAnimation size="large" message="로딩 중..." />
       </div>
     );
   }

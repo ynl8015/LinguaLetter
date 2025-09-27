@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import LoadingAnimation from './LoadingAnimation';
 
 interface NavbarProps {
   showEndSessionButton?: boolean;
@@ -44,7 +45,9 @@ export default function Navbar({ showEndSessionButton, onEndSession }: NavbarPro
             <img src="https://res.cloudinary.com/dahbfym6q/image/upload/v1758003572/%E1%84%85%E1%85%B5%E1%86%BC%E1%84%80%E1%85%AE%E1%84%8B%E1%85%A1%E1%84%85%E1%85%A6%E1%84%90%E1%85%A5%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9_lfvtie.png" className="w-8 h-8 object-contain" alt="logo" />
             <span className="text-xl font-bold text-gray-800">LinguaLetter</span>
           </Link>
-          <div className="w-6 h-6 animate-spin border-2 border-gray-300 border-t-gray-800 rounded-full"></div>
+          <div className="w-8 h-8">
+            <LoadingAnimation size="small" />
+          </div>
         </div>
       </nav>
     );

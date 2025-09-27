@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useMutation } from '@apollo/client';
 import { gql } from '@apollo/client';
 import Navbar from '../components/Navbar';
+import LoadingAnimation from '../components/LoadingAnimation';
 
 // GraphQL 뮤테이션 정의 (기존에 없다면 추가)
 const CONFIRM_SUBSCRIPTION = gql`
@@ -70,7 +71,7 @@ export default function NewsletterConfirm() {
           
           {status === 'loading' && (
             <div className="space-y-6">
-              <div className="animate-spin rounded-full h-16 w-16 border-b-3 border-gray-800 mx-auto"></div>
+              <LoadingAnimation size="large" />
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-4">구독 확인 중...</h1>
                 <p className="text-lg text-gray-600">잠시만 기다려주세요.</p>

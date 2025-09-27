@@ -6,6 +6,7 @@ import { useMutation, useApolloClient } from '@apollo/client';
 import { useAuth } from '../contexts/AuthContext';
 import { SUBMIT_CONSENT } from '../lib/apollo';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import LoadingAnimation from '../components/LoadingAnimation';
 
 interface CredentialResponse {
   credential?: string;
@@ -395,14 +396,11 @@ export default function Login() {
     }
   };
 
-  // 로딩 중
+  // 로딩 중 (네비바 없이)
   if (status === 'LOADING') {
     return (
       <div className="h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto mb-4"></div>
-          <p className="text-gray-600">로딩 중...</p>
-        </div>
+        <LoadingAnimation size="large" message="로딩 중..." />
       </div>
     );
   }
@@ -509,6 +507,7 @@ export default function Login() {
                   text="signin_with"
                   shape="rectangular"
                   width="100%"
+                  disabled={loading}
                 />
               </div>
 
@@ -526,9 +525,8 @@ export default function Login() {
             </div>
 
             {loading && (
-              <div className="mt-6 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-800"></div>
-                <span className="ml-3 text-gray-600 text-sm">처리 중...</span>
+              <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+                <LoadingAnimation size="medium" message="처리 중..." />
               </div>
             )}
           </div>
