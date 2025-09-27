@@ -121,7 +121,7 @@ Nodemailer 대신, Sendgrid를 사용해 백엔드 배포환경(Railway)에 더 
 
 <img width="1390" height="794" alt="Image" src="https://github.com/user-attachments/assets/656a8468-d6f2-4974-8dfd-8b040eebf807" />
 
-### 반응형 디자인
+### 8️⃣ 반응형 디자인
 
 모바일에서도 사용 가능한 친화적 디자인
 
