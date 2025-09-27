@@ -1,31 +1,16 @@
-import nodemailer from 'nodemailer';
+import sgMail from '@sendgrid/mail';
 import prisma from '../db';
 
 /**
- * 이메일 전송을 위한 Transport를 생성합니다.
+ * SendGrid 초기화
  */
-const createMailTransport = () => {
-  console.log('이메일 Transport 생성 중...');
-  console.log('EMAIL_USER:', process.env.EMAIL_USER);
-  console.log('EMAIL_PASS 길이:', process.env.EMAIL_PASS?.length);
+const initializeSendGrid = () => {
+  if (!process.env.SENDGRID_API_KEY) {
+    throw new Error('SENDGRID_API_KEY 환경변수가 설정되지 않았습니다.');
+  }
   
-  // Gmail 앱 비밀번호 사용을 위한 설정
-  return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // 587 포트는 secure: false
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS // 앱 비밀번호 사용
-    },
-    tls: {
-      rejectUnauthorized: false
-    },
-    // 연결 타임아웃 설정
-    connectionTimeout: 60000,
-    greetingTimeout: 30000,
-    socketTimeout: 60000
-  });
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log('SendGrid 초기화 완료');
 };
 
 /**
@@ -116,12 +101,9 @@ export async function sendNewsletterToAllSubscribers(newsId: string) {
       return { success: true, message: '발송할 구독자가 없습니다.', count: 0, total: 0 };
     }
 
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      throw new Error('이메일 환경변수가 설정되지 않았습니다.');
-    }
-
-    const transporter = createMailTransport();
+    initializeSendGrid();
     let successCount = 0;
+    const fromEmail = process.env.FROM_EMAIL || 'lingualetter@gmail.com';
 
     for (const subscriber of subscribers) {
       try {
@@ -129,12 +111,17 @@ export async function sendNewsletterToAllSubscribers(newsId: string) {
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
         const unsubscribeUrl = `${frontendUrl}/newsletter/unsubscribe/${subscriber.unsubscribeToken}`;
         
-        await transporter.sendMail({
-          from: `"LinguaLetter" <${process.env.EMAIL_USER}>`,
+        const msg = {
           to: subscriber.email,
+          from: {
+            email: fromEmail,
+            name: 'LinguaLetter'
+          },
           subject: `LinguaLetter에서 보내는 ${news.trendTopic} 관련 소식을 확인해보세요!`,
           html: createNewsletterTemplate(news, unsubscribeUrl)
-        });
+        };
+
+        await sgMail.send(msg);
         successCount++;
         console.log(`뉴스레터 발송 성공: ${subscriber.email}`);
       } catch (error) {
@@ -158,60 +145,60 @@ export async function sendNewsletterToAllSubscribers(newsId: string) {
 // ----------------------- 템플릿 / 유틸 -----------------------
 
 /**
- * 구독 확인 메일 발송
+ * 구독 확인 메일 발송 (SendGrid 사용)
  */
 async function sendConfirmationEmail(email: string, confirmToken: string) {
   console.log('=== 확인 이메일 발송 시작 ===');
   console.log('이메일:', email);
   console.log('확인 토큰:', confirmToken);
   
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.error('이메일 환경변수 누락:', {
-      EMAIL_USER: !!process.env.EMAIL_USER,
-      EMAIL_PASS: !!process.env.EMAIL_PASS
-    });
-    throw new Error('이메일 환경변수가 설정되지 않았습니다.');
-  }
-
-  const transporter = createMailTransport();
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-  const confirmUrl = `${frontendUrl}/newsletter/confirm/${confirmToken}`;
-  
-  console.log('확인 URL:', confirmUrl);
-  console.log('프론트엔드 URL:', frontendUrl);
-
   try {
-    console.log('이메일 발송 시도 중...');
-    console.log('발송자:', process.env.EMAIL_USER);
+    initializeSendGrid();
+    
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const confirmUrl = `${frontendUrl}/newsletter/confirm/${confirmToken}`;
+    const fromEmail = process.env.FROM_EMAIL || 'lingualetter@gmail.com';
+    
+    console.log('확인 URL:', confirmUrl);
+    console.log('프론트엔드 URL:', frontendUrl);
+    console.log('발송자:', fromEmail);
     console.log('수신자:', email);
-    console.log('제목:', "LinguaLetter 구독을 완료해주세요!");
-    
-    // 연결 테스트
-    console.log('SMTP 연결 테스트 중...');
-    await transporter.verify();
-    console.log('SMTP 연결 성공!');
-    
-    const result = await transporter.sendMail({
-      from: `"LinguaLetter" <${process.env.EMAIL_USER}>`,
+
+    const msg = {
       to: email,
+      from: {
+        email: fromEmail,
+        name: 'LinguaLetter'
+      },
       subject: "LinguaLetter 구독을 완료해주세요!",
       html: createConfirmationTemplate(confirmUrl)
-    });
+    };
+
+    console.log('SendGrid 이메일 발송 시도 중...');
+    const result = await sgMail.send(msg);
     
     console.log('확인 이메일 발송 성공!');
-    console.log('메시지 ID:', result.messageId);
-    console.log('응답:', result.response);
-    console.log('수락된 수신자:', result.accepted);
-    console.log('거부된 수신자:', result.rejected);
+    console.log('SendGrid 응답:', result[0].statusCode);
+    
   } catch (error: any) {
     console.error('확인 이메일 발송 실패:', error);
-    console.error('에러 상세:', {
-      message: error?.message,
-      code: error?.code,
-      response: error?.response,
-      responseCode: error?.responseCode,
-      command: error?.command
-    });
+    
+    if (error.response) {
+      console.error('SendGrid 에러 응답:', {
+        statusCode: error.response.statusCode,
+        body: error.response.body
+      });
+    }
+    
+    // SendGrid 에러 분석
+    if (error.code === 401) {
+      console.error('💡 SendGrid API 키가 유효하지 않습니다. SENDGRID_API_KEY를 확인해주세요.');
+    } else if (error.code === 403) {
+      console.error('💡 SendGrid 계정에 이메일 발송 권한이 없습니다.');
+    } else if (error.code === 400) {
+      console.error('💡 이메일 형식이나 내용에 문제가 있습니다.');
+    }
+    
     throw error;
   }
 }

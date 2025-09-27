@@ -88,9 +88,18 @@ export default function Login() {
     // 성공적인 로그인 처리
     if (tokenParam && statusParam === 'SUCCESS') {
       console.log('로그인 성공 처리:', { token: !!tokenParam });
-      // 토큰을 localStorage에 저장하고 대시보드로 이동
+      // 토큰을 localStorage에 저장
       localStorage.setItem('token', tokenParam);
-      window.location.href = '/dashboard';
+      
+      // 성공 메시지 표시
+      setSuccessMessage('로그인에 성공했습니다! 잠시 후 대시보드로 이동합니다.');
+      setMessageType('success');
+      setLoading(true);
+      
+      // 3초 후 대시보드로 이동
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 3000);
     }
     
     // 에러 처리
