@@ -25,7 +25,7 @@
 문화적 뉘앙스가 전달되지 않는 오류가 생깁니다.
 <br>
 <br>
-<img width="400" height="150" alt="Image" src="https://github.com/user-attachments/assets/e51e1ba7-dabe-484c-8e7a-ef5e7b91dbaa" />
+<img width="800" height="300" alt="Image" src="https://github.com/user-attachments/assets/e51e1ba7-dabe-484c-8e7a-ef5e7b91dbaa" />
 <br>
 <br>
   /
