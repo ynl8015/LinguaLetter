@@ -209,20 +209,30 @@ export default function Teacher() {
 
   const endSession = async () => {
     if (!selectedTeacher || messages.length === 0) {
+      console.log('세션 종료 조건 불충족:', { selectedTeacher: !!selectedTeacher, messagesLength: messages.length });
       return;
     }
 
     const userMessages = messages.filter(msg => msg.role === 'user');
     const userInputLength = userMessages.reduce((total, msg) => total + msg.content.length, 0);
 
+    console.log('세션 종료 시작:', { 
+      userMessagesCount: userMessages.length, 
+      userInputLength, 
+      isAuthenticated, 
+      hasUser: !!user 
+    });
+
     // 최소 데이터 요구사항 체크 (500자 이상)
     if (userInputLength < 500) {
+      console.log('최소 데이터 요구사항 미충족:', userInputLength, '(500자 이상 필요)');
       setShowShortSessionModal(true);
       return;
     }
 
     // 로그인이 안 되어 있으면 로그인 유도
     if (!isAuthenticated || !user) {
+      console.log('로그인되지 않은 사용자, 로그인 유도');
       const tempSession = {
         teacher: selectedTeacher.name, // name 사용
         teacherName: selectedTeacher.name,
@@ -244,6 +254,7 @@ export default function Teacher() {
     setSessionEnded(true);
 
     try {
+      console.log('세션 생성 시작...');
       // 1. 세션 생성
       const sessionResult = await createSession({
         variables: {
@@ -255,6 +266,8 @@ export default function Teacher() {
           }
         }
       });
+
+      console.log('세션 생성 결과:', sessionResult);
 
       if (sessionResult.data?.createSession) {
         const sessionId = sessionResult.data.createSession.id;
@@ -290,11 +303,23 @@ export default function Teacher() {
         }
 
         // 대시보드로 이동
+        console.log('세션 종료 완료, 대시보드로 이동...');
         window.location.href = '/dashboard';
+      } else {
+        console.error('세션 생성 실패: 응답 데이터 없음');
+        setSessionEnded(false);
       }
     } catch (error) {
       console.error('세션 종료 오류:', error);
+      console.error('에러 상세:', {
+        message: error.message,
+        graphQLErrors: error.graphQLErrors,
+        networkError: error.networkError
+      });
       setSessionEnded(false);
+      
+      // 사용자에게 알림
+      alert('세션 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
     }
   };
 
@@ -439,7 +464,16 @@ export default function Teacher() {
     <div className="h-screen bg-white flex flex-col">
       <Navbar 
         showEndSessionButton={messages.length > 0 && !sessionEnded}
-        onEndSession={endSession}
+        onEndSession={() => {
+          console.log('네비바에서 수업 마치기 버튼 클릭됨');
+          console.log('현재 상태:', { 
+            messagesLength: messages.length, 
+            sessionEnded, 
+            selectedTeacher: !!selectedTeacher,
+            userMessages: messages.filter(m => m.role === 'user').length
+          });
+          endSession();
+        }}
       />
 
       <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full pt-20">

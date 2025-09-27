@@ -498,7 +498,7 @@ export default function Login() {
             {/* Login Buttons */}
             <div className="space-y-4">
               {/* Google Login */}
-              <div className="google-login-wrapper">
+              <div className={`google-login-wrapper ${loading ? 'pointer-events-none opacity-50' : ''}`}>
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={handleGoogleError}
@@ -507,7 +507,6 @@ export default function Login() {
                   text="signin_with"
                   shape="rectangular"
                   width="100%"
-                  disabled={loading}
                 />
               </div>
 
