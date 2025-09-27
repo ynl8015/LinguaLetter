@@ -74,7 +74,7 @@ JWT 인증, 동의서 관리 로직 구현
 ### 3️⃣ 자동뉴스생성 기능
 자동 뉴스 생성과, 수동 뉴스 수정이 가능한 하이브리드 구조로, 질 높은 기사를 작성
 
-![Image](https://github.com/user-attachments/assets/30e1389c-5875-4bde-ad19-1da959a1fd05)
+![Image](https://github.com/user-attachments/assets/d3e56fe2-09f9-42f7-a1af-59735a9c8d49)
 
 ### 4️⃣ 스케쥴링 기능
 
