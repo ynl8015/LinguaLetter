@@ -77,7 +77,7 @@ export const sessionResolvers = {
       console.log('createSession 호출됨:', { 
         hasUser: !!user, 
         userKeys: user ? Object.keys(user) : null,
-        userId: user?.id || user?.userId,
+        userId: user?.id,
         input 
       });
       
@@ -85,18 +85,16 @@ export const sessionResolvers = {
       console.log('requireAuth 결과:', { 
         currentUser, 
         hasId: !!currentUser.id,
-        hasUserId: !!currentUser.userId,
         keys: Object.keys(currentUser)
       });
       
-      const userId = currentUser.id || currentUser.userId;
-      if (!userId) {
+      if (!currentUser.id) {
         throw new Error('사용자 ID를 찾을 수 없습니다.');
       }
       
       return await prisma.session.create({
         data: {
-          userId: userId,
+          userId: currentUser.id,
           ...input
         }
       });

@@ -65,8 +65,9 @@ export default function Login() {
     const kakaoConsentParam = urlParams.get('kakao_consent');
     const tokenParam = urlParams.get('token');
     const statusParam = urlParams.get('status');
+    const userParam = urlParams.get('user');
     
-    console.log('Login.tsx URL 파라미터:', { errorParam, deletedParam, loggedOutParam, kakaoConsentParam, tokenParam, statusParam });
+    console.log('Login.tsx URL 파라미터:', { errorParam, deletedParam, loggedOutParam, kakaoConsentParam, tokenParam, statusParam, hasUser: !!userParam });
     
     // 카카오 동의서 콜백 처리 (백엔드에서 직접 리다이렉트)
     if (kakaoConsentParam === 'true' && tokenParam && statusParam === 'CONSENT_REQUIRED') {
@@ -86,21 +87,35 @@ export default function Login() {
       setShowConsentModal(true);
     }
     
-    // 성공적인 로그인 처리
+    // 성공적인 로그인 처리 (카카오/구글 공통)
     if (tokenParam && statusParam === 'SUCCESS') {
-      console.log('로그인 성공 처리:', { token: !!tokenParam });
+      console.log('로그인 성공 처리:', { token: !!tokenParam, hasUser: !!userParam });
+      
       // 토큰을 localStorage에 저장
       localStorage.setItem('token', tokenParam);
       
-      // 성공 메시지 표시
-      setSuccessMessage('로그인에 성공했습니다! 잠시 후 대시보드로 이동합니다.');
-      setMessageType('success');
-      setLoading(true);
+      // 사용자 정보도 함께 저장 (새로고침 방지)
+      if (userParam) {
+        try {
+          const userData = JSON.parse(decodeURIComponent(userParam));
+          localStorage.setItem('user', JSON.stringify(userData));
+          console.log('사용자 정보 저장 완료:', userData.email);
+        } catch (error) {
+          console.error('사용자 정보 파싱 실패:', error);
+        }
+      }
       
-      // 3초 후 대시보드로 이동
+      // 성공 메시지 표시
+      setSuccessMessage('로그인 성공!');
+      setMessageType('success');
+      setLoading(false); // 로딩 해제
+      
+      // 즉시 대시보드로 이동 (로딩 최소화)
       setTimeout(() => {
-        window.location.href = '/dashboard';
-      }, 3000);
+        const urlParams = new URLSearchParams(location.search);
+        const redirectTo = urlParams.get('redirect') || '/dashboard';
+        window.location.href = redirectTo; // navigate 대신 window.location.href 사용
+      }, 500);
     }
     
     // 에러 처리

@@ -107,6 +107,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, [isAuthenticated]);
 
+  // 토큰 변경 감지
+  useEffect(() => {
+    const checkTokenChange = () => {
+      const currentToken = localStorage.getItem('token');
+      const currentHasToken = !!currentToken;
+      
+      if (currentHasToken !== hasToken) {
+        setHasToken(currentHasToken);
+      }
+    };
+    
+    // 즉시 확인
+    checkTokenChange();
+    
+    // storage 이벤트 리스너 (다른 탭에서 토큰 변경 감지)
+    window.addEventListener('storage', checkTokenChange);
+    
+    return () => {
+      window.removeEventListener('storage', checkTokenChange);
+    };
+  }, [hasToken]);
+
   // 사용자 데이터 처리
   useEffect(() => {
     const currentToken = localStorage.getItem('token');
@@ -114,23 +136,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // 토큰이 없으면 미인증 상태로 설정
     if (!currentToken) {
-      setUser(null);
-      setIsAuthenticated(false);
-      setStatus('UNAUTHENTICATED');
-      setInitialized(true);
+      if (user || isAuthenticated || status !== 'UNAUTHENTICATED') {
+        setUser(null);
+        setIsAuthenticated(false);
+        setStatus('UNAUTHENTICATED');
+        setInitialized(true);
+      }
       return;
     }
 
-    // 로컬 스토리지에 사용자 정보가 있으면 먼저 설정
+    // 로컬 스토리지에 사용자 정보가 있으면 즉시 설정 (GraphQL 쿼리 스킵)
     if (storedUser && !user) {
       try {
         const parsedUser = JSON.parse(storedUser);
+        console.log('로컬 스토리지에서 사용자 정보 복원:', parsedUser.email);
         setUser(parsedUser);
         setIsAuthenticated(true);
         setStatus('AUTHENTICATED');
+        setInitialized(true);
+        return; // GraphQL 쿼리 완전히 스킵
       } catch (error) {
         console.error('Failed to parse stored user:', error);
         localStorage.removeItem('user');
+      }
+    }
+
+    // 이미 사용자가 있고 같은 사용자면 추가 처리 불필요
+    if (user && storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        if (user.id === parsedUser.id) {
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to parse stored user:', error);
       }
     }
 

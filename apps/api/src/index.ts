@@ -343,9 +343,10 @@ async function start() {
       const params = new URLSearchParams({
         token: result.token,
         status: 'SUCCESS',
-        success: result.success.toString()
+        success: result.success.toString(),
+        user: encodeURIComponent(JSON.stringify(result.user))
       });
-      return reply.redirect(`${frontendUrl}/login?token=${result.token}&status=SUCCESS`);
+      return reply.redirect(`${frontendUrl}/login?token=${result.token}&status=SUCCESS&user=${encodeURIComponent(JSON.stringify(result.user))}`);
 
     } catch (error: any) {
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';

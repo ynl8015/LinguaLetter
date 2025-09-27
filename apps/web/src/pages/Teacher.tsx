@@ -343,6 +343,11 @@ export default function Teacher() {
     if (!user || !selectedTeacher) return;
     
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.');
+      }
+      
       await createSession({
         variables: {
           input: {
@@ -350,6 +355,11 @@ export default function Teacher() {
             topic: currentNews ? currentNews.trendTopic : 'General Practice',
             summary: `${selectedTeacher.name}과 짧은 대화 (${messages.filter(m => m.role === 'user').length}개 메시지)`,
             feedback: []
+          }
+        },
+        context: {
+          headers: {
+            authorization: `Bearer ${token}`
           }
         }
       });

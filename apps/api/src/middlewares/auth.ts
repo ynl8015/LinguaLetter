@@ -18,11 +18,15 @@ export interface Context {
 export async function createContext(request: any): Promise<Context> {
   const authHeader = request?.headers?.authorization;
   
+  console.log('🔍 인증 헤더 확인:', authHeader ? 'Bearer 토큰 존재' : '인증 헤더 없음');
+  
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log('❌ 인증 실패: Bearer 토큰 없음');
     return { user: null, tempUser: false, prisma, request };
   }
 
   const token = authHeader.substring(7);
+  console.log('🔑 토큰 추출됨, 길이:', token.length);
   
   try {
     const verification = await verifyAuthToken(token);
@@ -34,9 +38,15 @@ export async function createContext(request: any): Promise<Context> {
     
     // 임시 토큰인 경우 제한적 접근만 허용
     if (verification.status === 'TEMP') {
-      console.log('Temp token detected for user:', verification.decoded.userId);
+      console.log('⚠️ 임시 토큰 감지:', verification.decoded.userId);
+      // decoded 객체에 id 속성 추가 (JWT payload에서 userId -> id로 매핑)
+      const userWithId = { 
+        ...verification.decoded, 
+        id: verification.decoded.userId 
+      };
+      console.log('✅ 임시 사용자 컨텍스트 생성:', userWithId.id);
       return { 
-        user: verification.decoded, 
+        user: userWithId, 
         tempUser: true,
         prisma, 
         request 
@@ -46,14 +56,36 @@ export async function createContext(request: any): Promise<Context> {
     // 정상 토큰인 경우 활동 기록
     if (verification.status === 'VALID') {
       recordActivity(verification.decoded.userId);
+      
+      // DB에서 가져온 user 객체가 있으면 그것을 우선 사용 (이미 id 필드가 있음)
+      if (verification.user) {
+        console.log('✅ DB user 객체 사용:', verification.user.id);
+        return { 
+          user: verification.user, 
+          tempUser: false,
+          prisma, 
+          request 
+        };
+      }
+      
+      // user 객체가 없으면 decoded에서 생성
+      const userWithId = { 
+        ...verification.decoded, 
+        id: verification.decoded.userId 
+      };
+      
+      console.log('✅ decoded에서 사용자 컨텍스트 생성:', userWithId.id);
+      return { 
+        user: userWithId, 
+        tempUser: false,
+        prisma, 
+        request 
+      };
     }
     
-    return { 
-      user: verification.decoded, 
-      tempUser: false,
-      prisma, 
-      request 
-    };
+    // 기타 경우 처리
+    return { user: null, tempUser: false, prisma, request };
+    
   } catch (error) {
     console.error('Token verification failed:', error);
     return { user: null, tempUser: false, prisma, request };
@@ -98,7 +130,7 @@ export function extractUserId(user: any) {
     throw new Error('인증이 필요합니다.');
   }
   
-  return user.userId || user.id;
+  return user.id || user.userId;
 }
 
 // JWT 토큰 직접 검증 (서비스에서 사용)
@@ -315,7 +347,7 @@ export function logUserAccess(context: Context, endpoint: string, method: string
   if (!context.user) return;
   
   const accessLog: AccessLog = {
-    userId: context.user.userId || context.user.id,
+    userId: context.user.id || context.user.userId,
     endpoint,
     method,
     timestamp: new Date(),

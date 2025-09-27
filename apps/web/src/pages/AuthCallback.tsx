@@ -32,12 +32,12 @@ export default function AuthCallback() {
         localStorage.setItem('kakaoAuthStatus', status);
         navigate('/login?kakao_consent=true');
       } else if (status === 'SUCCESS') {
-        // 로그인 성공한 경우 - 빠른 리다이렉트
+        // 로그인 성공한 경우 - 구글처럼 처리
         localStorage.setItem('token', token);
         localStorage.setItem('kakaoAuthStatus', 'SUCCESS');
         
-        // 즉시 대시보드로 이동 (로딩 최소화)
-        window.location.replace('/dashboard');
+        // 성공 메시지 표시 후 대시보드로 이동 (구글 로그인과 동일한 패턴)
+        navigate('/login?token=' + encodeURIComponent(token) + '&status=SUCCESS');
       } else {
         navigate('/login?error=unknown_status');
       }

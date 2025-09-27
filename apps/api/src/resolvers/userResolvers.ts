@@ -47,7 +47,7 @@ export const userResolvers = {
         throw new Error('User not found or token invalid');
       }
       
-      // JWT 토큰에서 디코딩된 사용자 ID 사용 (userId 또는 id)
+      // JWT 토큰에서 디코딩된 사용자 ID 사용 (id)
       const userId = (user as any).userId || user.id;
       
       // 임시 토큰인 경우 제한적 정보만 반환
