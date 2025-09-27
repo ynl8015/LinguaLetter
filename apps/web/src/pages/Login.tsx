@@ -1,4 +1,4 @@
-// Login.tsx - 모든 로그인 로직 통합
+// Login.tsx - 구글 버튼 스타일 개선
 import React, { useState, useEffect } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
@@ -52,11 +52,11 @@ export default function Login() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [consentSubmitting, setConsentSubmitting] = useState(false);
-  const [isKakaoLogin, setIsKakaoLogin] = useState(false); // 카카오 로그인 여부 추적
+  const [isKakaoLogin, setIsKakaoLogin] = useState(false);
 
   const [submitConsent] = useMutation(SUBMIT_CONSENT);
 
-  // URL 파라미터 처리 - 백엔드에서 직접 리다이렉트된 데이터 처리
+  // URL 파라미터 처리
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const errorParam = urlParams.get('error');
@@ -67,12 +67,8 @@ export default function Login() {
     const statusParam = urlParams.get('status');
     const userParam = urlParams.get('user');
     
-    console.log('Login.tsx URL 파라미터:', { errorParam, deletedParam, loggedOutParam, kakaoConsentParam, tokenParam, statusParam, hasUser: !!userParam });
-    
-    // 카카오 동의서 콜백 처리 (백엔드에서 직접 리다이렉트)
+    // 카카오 동의서 콜백 처리
     if (kakaoConsentParam === 'true' && tokenParam && statusParam === 'CONSENT_REQUIRED') {
-      console.log('카카오 동의서 처리:', { token: !!tokenParam, status: statusParam });
-      
       setIsKakaoLogin(true);
       setTempToken(tokenParam);
       setConsentData({
@@ -87,34 +83,26 @@ export default function Login() {
       setShowConsentModal(true);
     }
     
-    // 성공적인 로그인 처리 (카카오/구글 공통)
+    // 성공적인 로그인 처리
     if (tokenParam && statusParam === 'SUCCESS') {
-      console.log('로그인 성공 처리:', { token: !!tokenParam, hasUser: !!userParam });
-      
-      // 토큰을 localStorage에 저장
       localStorage.setItem('token', tokenParam);
       
-      // 사용자 정보도 함께 저장 (새로고침 방지)
       if (userParam) {
         try {
           const userData = JSON.parse(decodeURIComponent(userParam));
           localStorage.setItem('user', JSON.stringify(userData));
-          console.log('사용자 정보 저장 완료:', userData.email);
         } catch (error) {
           console.error('사용자 정보 파싱 실패:', error);
         }
       }
       
-      // 성공 메시지 표시
       setSuccessMessage('로그인 성공!');
       setMessageType('success');
-      setLoading(false); // 로딩 해제
+      setLoading(false);
       
-      // 즉시 대시보드로 이동 (로딩 최소화)
       setTimeout(() => {
-        const urlParams = new URLSearchParams(location.search);
         const redirectTo = urlParams.get('redirect') || '/dashboard';
-        window.location.href = redirectTo; // navigate 대신 window.location.href 사용
+        window.location.href = redirectTo;
       }, 500);
     }
     
@@ -131,20 +119,18 @@ export default function Login() {
       }
     }
     
-    // 계정 삭제 메시지
     if (deletedParam === 'true') {
       setSuccessMessage('계정이 삭제되었습니다. 새로운 회원가입을 시도해주세요.');
       setMessageType('info');
       logout();
     }
     
-    // 로그아웃 메시지
     if (loggedOutParam === 'true') {
       setSuccessMessage('로그아웃되었습니다.');
       setMessageType('success');
     }
 
-    // URL 정리 - redirect 파라미터는 유지
+    // URL 정리
     if (errorParam || deletedParam || loggedOutParam || kakaoConsentParam) {
       setTimeout(() => {
         const redirectParam = urlParams.get('redirect');
@@ -166,9 +152,7 @@ export default function Login() {
   // 성공 메시지 자동 숨김
   useEffect(() => {
     if (successMessage) {
-      const timer = setTimeout(() => {
-        setSuccessMessage('');
-      }, 6000);
+      const timer = setTimeout(() => setSuccessMessage(''), 6000);
       return () => clearTimeout(timer);
     }
   }, [successMessage]);
@@ -181,18 +165,15 @@ export default function Login() {
       setLoading(true);
       setError('');
       setSuccessMessage('');
-      setIsKakaoLogin(false); // Google 로그인임을 표시
+      setIsKakaoLogin(false);
       
       if (credentialResponse.credential) {
         const userInfo: GoogleUser = jwtDecode(credentialResponse.credential);
-        console.log('Google 로그인 시도:', userInfo.email);
 
         const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/auth/google`, {
           method: 'POST',
           credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             googleToken: credentialResponse.credential,
             email: userInfo.email,
@@ -205,8 +186,6 @@ export default function Login() {
         const data = await response.json();
 
         if (response.ok && data.success) {
-          console.log('🔐 Google 인증 응답:', data.status);
-          
           if (data.status === 'CONSENT_REQUIRED') {
             setConsentData(data.consents);
             setTempToken(data.token);
@@ -243,18 +222,16 @@ export default function Login() {
     }
   };
 
-  // 카카오 로그인 시작 - AuthCallback으로 리다이렉트됨
+  // 카카오 로그인 시작
   const handleKakaoLogin = () => {
     if (loading) return;
     
-    // 카카오 로그인 시작 플래그 설정
     localStorage.setItem('kakaoLoginStarted', 'true');
     setLoading(true);
     
     const currentUrl = encodeURIComponent(window.location.href);
     const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${import.meta.env.VITE_KAKAO_CLIENT_ID}&redirect_uri=${encodeURIComponent(import.meta.env.VITE_KAKAO_REDIRECT_URI || 'http://localhost:4000/auth/kakao/callback')}&response_type=code&state=${currentUrl}`;
     
-    // 로딩 표시 후 리다이렉트
     setTimeout(() => {
       window.location.href = kakaoAuthUrl;
     }, 100);
@@ -267,7 +244,7 @@ export default function Login() {
     setLoading(false);
   };
 
-  // 동의서 제출 처리 (Google과 카카오 공통)
+  // 동의서 제출 처리
   const handleConsentSubmit = async () => {
     if (!termsAccepted || !privacyAccepted) {
       setError('필수 항목에 동의해주세요.');
@@ -284,10 +261,8 @@ export default function Login() {
       setConsentSubmitting(true);
       setError('');
 
-      console.log('동의서 제출 시작 - 카카오 로그인:', isKakaoLogin);
       localStorage.setItem('tempToken', tempToken);
 
-      // GraphQL 뮤테이션으로 동의 제출
       const result = await submitConsent({
         variables: {
           input: {
@@ -300,26 +275,19 @@ export default function Login() {
           }
         },
         context: {
-          headers: {
-            authorization: `Bearer ${tempToken}`
-          }
+          headers: { authorization: `Bearer ${tempToken}` }
         }
       });
 
       if (result.data?.submitConsent) {
-        console.log('동의서 제출 완료');
-        
-        // 동의 완료 후 정식 로그인 처리
         const success = await completeRegistration(tempToken);
         
         if (success) {
-          console.log('회원가입 완료');
           localStorage.removeItem('tempToken');
           setShowConsentModal(false);
           setSuccessMessage('환영합니다! 잠시 후 이동합니다...');
           setMessageType('success');
           
-          // Apollo Client 캐시 초기화 (새로운 토큰으로 쿼리 재실행을 위해)
           await apolloClient.resetStore();
           
           setTimeout(() => {
@@ -327,10 +295,8 @@ export default function Login() {
             const redirectTo = urlParams.get('redirect') || '/dashboard';
             
             if (isKakaoLogin) {
-              // 카카오 로그인의 경우 완전 새로고침
               window.location.href = redirectTo;
             } else {
-              // Google 로그인의 경우 일반 navigation
               navigate(redirectTo, { replace: true });
             }
           }, 2000);
@@ -372,119 +338,119 @@ export default function Login() {
     setError('');
     setIsKakaoLogin(false);
     
-    // 임시 저장된 데이터 모두 정리
     localStorage.removeItem('tempToken');
     localStorage.removeItem('kakaoTempToken');
     localStorage.removeItem('kakaoAuthStatus');
   };
 
-  // 메시지 스타일
+  // 메시지 스타일 및 아이콘 함수들
   const getMessageStyle = (type: 'success' | 'info' | 'warning') => {
     switch (type) {
-      case 'success':
-        return 'bg-green-50 border-green-200 text-green-700';
-      case 'info':
-        return 'bg-blue-50 border-blue-200 text-blue-700';
-      case 'warning':
-        return 'bg-amber-50 border-amber-200 text-amber-700';
-      default:
-        return 'bg-gray-50 border-gray-200 text-gray-700';
+      case 'success': return 'bg-green-50 border-green-200 text-green-700';
+      case 'info': return 'bg-blue-50 border-blue-200 text-blue-700';
+      case 'warning': return 'bg-amber-50 border-amber-200 text-amber-700';
+      default: return 'bg-gray-50 border-gray-200 text-gray-700';
     }
   };
 
-  // 메시지 아이콘
   const getMessageIcon = (type: 'success' | 'info' | 'warning') => {
+    const iconClass = "w-5 h-5";
     switch (type) {
       case 'success':
-        return (
-          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        );
+        return <svg className={`${iconClass} text-green-600`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>;
       case 'info':
-        return (
-          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        );
+        return <svg className={`${iconClass} text-blue-600`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
       case 'warning':
-        return (
-          <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-          </svg>
-        );
-      default:
-        return null;
+        return <svg className={`${iconClass} text-amber-600`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>;
+      default: return null;
     }
   };
 
   return (
     <div className="h-screen overflow-hidden bg-white relative">
+      {/* 🔥 완전히 개선된 구글 버튼 스타일 */}
       <style dangerouslySetInnerHTML={{
         __html: `
-          .google-login-wrapper {
+          /* 구글 로그인 컨테이너 */
+          .google-login-container {
             width: 100% !important;
-          }
-          
-          .google-login-wrapper > div {
-            width: 100% !important;
-            height: 48px !important;
-            min-height: 48px !important;
-            border-radius: 8px !important;
-            border: 1px solid #d1d5db !important;
-            background: white !important;
-            box-shadow: none !important;
-            font-family: inherit !important;
-            font-size: 14px !important;
-            font-weight: 500 !important;
-            color: #374151 !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            transition: all 0.2s ease !important;
             position: relative !important;
-            box-sizing: border-box !important;
           }
           
-          .google-login-wrapper > div > div {
-            width: 100% !important;
-            height: 100% !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
+          /* 구글 버튼의 최상위 컨테이너 완전 리셋 */
+          .google-login-container > div,
+          .google-login-container > div > div,
+          .google-login-container > div > div > div,
+          .google-login-container iframe {
             border: none !important;
             box-shadow: none !important;
+            outline: none !important;
+            background: transparent !important;
+            border-radius: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
           
-          .google-login-wrapper > div:hover {
+          /* 구글 버튼 메인 컨테이너 강제 스타일링 */
+          .google-login-container > div {
+            width: 100% !important;
+            height: 48px !important;
+            background: white !important;
+            border: 1px solid #d1d5db !important;
+            border-radius: 8px !important;
+            transition: all 0.2s ease !important;
+            overflow: hidden !important;
+            position: relative !important;
+          }
+          
+          /* 호버 효과 */
+          .google-login-container > div:hover {
             background: #f9fafb !important;
             border-color: #9ca3af !important;
           }
           
-          .google-login-wrapper > div:focus {
-            outline: none !important;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+          /* 구글 버튼 내부 모든 요소들 */
+          .google-login-container * {
+            box-sizing: border-box !important;
           }
           
+          /* 구글 아이콘과 텍스트 영역 */
+          .google-login-container [role="button"],
+          .google-login-container button {
+            width: 100% !important;
+            height: 48px !important;
+            border: none !important;
+            background: transparent !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            font-size: 14px !important;
+            font-weight: 500 !important;
+            color: #374151 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 12px !important;
+            cursor: pointer !important;
+            padding: 0 16px !important;
+          }
           
-          .google-login-wrapper span {
+          /* 구글 로고 크기 조정 */
+          .google-login-container svg,
+          .google-login-container img {
+            width: 20px !important;
+            height: 20px !important;
+            flex-shrink: 0 !important;
+          }
+          
+          /* 텍스트 스타일 */
+          .google-login-container span {
+            font-family: inherit !important;
             font-size: 14px !important;
             font-weight: 500 !important;
             color: #374151 !important;
           }
-          
-          .google-login-wrapper svg {
-            width: 20px !important;
-            height: 20px !important;
-            margin-right: 12px !important;
-          }
-          
-          /* 구글 로그인 버튼의 모든 하위 요소 강제 스타일링 */
-          .google-login-wrapper * {
-            box-sizing: border-box !important;
-          }
         `
       }} />
+      
       <div className="h-full flex items-center justify-center px-6">
         <div className="w-full max-w-md">
           {/* Main Card */}
@@ -492,13 +458,11 @@ export default function Login() {
             {/* Logo Section */}
             <div className="text-center mb-8">
               <div className="flex justify-center mb-6">
-                <div className="relative">
-                  <img 
-                    src="https://res.cloudinary.com/dahbfym6q/image/upload/v1758003572/%E1%84%85%E1%85%B5%E1%86%BC%E1%84%80%E1%85%AE%E1%84%8B%E1%85%A1%E1%84%85%E1%85%A6%E1%84%90%E1%85%A5%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9_lfvtie.png" 
-                    alt="LinguaLetter Logo" 
-                    className="w-16 h-16 object-contain"
-                  />
-                </div>
+                <img 
+                  src="https://res.cloudinary.com/dahbfym6q/image/upload/v1758003572/%E1%84%85%E1%85%B5%E1%86%BC%E1%84%80%E1%85%AE%E1%84%8B%E1%85%A1%E1%84%85%E1%85%A6%E1%84%90%E1%85%A5%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9_lfvtie.png" 
+                  alt="LinguaLetter Logo" 
+                  className="w-16 h-16 object-contain"
+                />
               </div>
               <h1 className="text-3xl font-bold text-gray-900 mb-3">
                 LinguaLetter
@@ -533,8 +497,8 @@ export default function Login() {
 
             {/* Login Buttons */}
             <div className="space-y-4">
-              {/* Google Login */}
-              <div className={`google-login-wrapper ${loading ? 'pointer-events-none opacity-50' : ''}`}>
+              {/* 🔥 개선된 Google Login */}
+              <div className={`google-login-container ${loading ? 'pointer-events-none opacity-50' : ''}`}>
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={handleGoogleError}
@@ -546,7 +510,7 @@ export default function Login() {
                 />
               </div>
 
-              {/* Kakao Login */}
+              {/* Kakao Login - 기존과 동일 */}
               <button
                 onClick={handleKakaoLogin}
                 disabled={loading}
@@ -559,6 +523,7 @@ export default function Login() {
               </button>
             </div>
 
+            {/* 로딩 오버레이 */}
             {loading && (
               <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
                 <LoadingAnimation size="medium" message="처리 중..." />
@@ -583,7 +548,7 @@ export default function Login() {
         </div>
       </div>
 
-      {/* Consent Modal */}
+      {/* Consent Modal - 기존과 동일 */}
       {showConsentModal && consentData && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-[16px] w-full max-w-lg shadow-2xl border border-gray-200 max-h-[90vh] overflow-hidden">
