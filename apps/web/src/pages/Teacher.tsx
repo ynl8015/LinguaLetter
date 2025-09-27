@@ -228,9 +228,9 @@ export default function Teacher() {
       tempToken: !!localStorage.getItem('tempToken')
     });
 
-    // 최소 데이터 요구사항 체크 (500자 이상)
-    if (userInputLength < 500) {
-      console.log('최소 데이터 요구사항 미충족:', userInputLength, '(500자 이상 필요)');
+    // 최소 데이터 요구사항 체크 (200자 이상)
+    if (userInputLength < 200) {
+      console.log('최소 데이터 요구사항 미충족:', userInputLength, '(200자 이상 필요)');
       setShowShortSessionModal(true);
       return;
     }
@@ -521,9 +521,9 @@ export default function Teacher() {
                 <span className="text-sm text-gray-500">
                   입력한 글자: {messages.filter(m => m.role === 'user').reduce((total, msg) => total + msg.content.length, 0)}자
                 </span>
-                {messages.filter(m => m.role === 'user').reduce((total, msg) => total + msg.content.length, 0) < 500 && (
+                {messages.filter(m => m.role === 'user').reduce((total, msg) => total + msg.content.length, 0) < 200 && (
                   <span className="text-orange-500 text-sm font-medium">
-                    (500자 필요 - 피드백 분석용)
+                    (200자 필요 - 피드백 분석용)
                   </span>
                 )}
               </div>
@@ -755,7 +755,7 @@ export default function Teacher() {
                   현재 입력: <span className="font-bold text-gray-800">{messages.filter(m => m.role === 'user').reduce((total, msg) => total + msg.content.length, 0)}자</span>
                 </p>
                 <p className="text-sm text-gray-600">
-                  필요: <span className="font-bold text-gray-800">500자</span>
+                  필요: <span className="font-bold text-gray-800">200자</span>
                 </p>
               </div>
               <p className="text-gray-600 leading-relaxed">

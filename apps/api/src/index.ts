@@ -510,8 +510,7 @@ async function start() {
             <div class="container">
               <h2>구독이 해지되었습니다</h2>
               <div class="success">앞으로 뉴스레터를 받지 않으시게 됩니다.<br/>언제든 다시 구독하실 수 있습니다.</div>
-              <a href="/subscription" class="btn">다시 구독하기</a>
-              <a href="/" class="btn" style="background: #6b7280; margin-left: 10px;">홈으로 가기</a>
+              <a href="${process.env.FRONTEND_URL || 'https://lingualetter.ai.kr'}" class="btn">홈으로 가기</a>
             </div>
           </body>
         </html>

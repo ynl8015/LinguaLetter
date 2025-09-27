@@ -446,6 +446,16 @@ export default function Login() {
             box-sizing: border-box !important;
           }
           
+          .google-login-wrapper > div > div {
+            width: 100% !important;
+            height: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border: none !important;
+            box-shadow: none !important;
+          }
+          
           .google-login-wrapper > div:hover {
             background: #f9fafb !important;
             border-color: #9ca3af !important;
@@ -456,13 +466,6 @@ export default function Login() {
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
           }
           
-          .google-login-wrapper > div > div {
-            width: 100% !important;
-            height: 100% !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-          }
           
           .google-login-wrapper span {
             font-size: 14px !important;

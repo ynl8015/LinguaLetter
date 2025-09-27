@@ -152,8 +152,11 @@ export default function News() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <LoadingAnimation size="large" />
+      <div className="min-h-screen bg-white">
+        <Navbar />
+        <div className="fixed inset-0 bg-white/20 backdrop-blur-lg flex items-center justify-center z-50">
+          <LoadingAnimation size="large" />
+        </div>
       </div>
     );
   }
