@@ -220,7 +220,11 @@ export default function Teacher() {
       userMessagesCount: userMessages.length, 
       userInputLength, 
       isAuthenticated, 
-      hasUser: !!user 
+      hasUser: !!user,
+      userId: user?.id,
+      userEmail: user?.email,
+      token: !!localStorage.getItem('token'),
+      tempToken: !!localStorage.getItem('tempToken')
     });
 
     // 최소 데이터 요구사항 체크 (500자 이상)
@@ -255,6 +259,13 @@ export default function Teacher() {
 
     try {
       console.log('세션 생성 시작...');
+      
+      // 토큰 재확인
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.');
+      }
+      
       // 1. 세션 생성
       const sessionResult = await createSession({
         variables: {
@@ -263,6 +274,11 @@ export default function Teacher() {
             topic: currentNews ? currentNews.trendTopic : 'General Practice',
             summary: `${selectedTeacher.name}과 ${currentNews ? currentNews.trendTopic : '일반 영어'} 주제로 ${messages.length}개 메시지 대화`,
             feedback: []
+          }
+        },
+        context: {
+          headers: {
+            authorization: `Bearer ${token}`
           }
         }
       });
