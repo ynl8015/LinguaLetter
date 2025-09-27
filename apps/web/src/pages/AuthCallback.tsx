@@ -14,6 +14,9 @@ export default function AuthCallback() {
 
     console.log('AuthCallback - 받은 파라미터:', { token: !!token, error, status });
 
+    // 카카오 로그인 시작 플래그 제거
+    localStorage.removeItem('kakaoLoginStarted');
+
     // 에러 처리
     if (error) {
       console.error('카카오 인증 오류:', decodeURIComponent(error));
@@ -29,10 +32,12 @@ export default function AuthCallback() {
         localStorage.setItem('kakaoAuthStatus', status);
         navigate('/login?kakao_consent=true');
       } else if (status === 'SUCCESS') {
-        // 로그인 성공한 경우
+        // 로그인 성공한 경우 - 빠른 리다이렉트
         localStorage.setItem('token', token);
         localStorage.setItem('kakaoAuthStatus', 'SUCCESS');
-        window.location.href = '/dashboard'; // 완전 새로고침
+        
+        // 즉시 대시보드로 이동 (로딩 최소화)
+        window.location.replace('/dashboard');
       } else {
         navigate('/login?error=unknown_status');
       }
@@ -45,7 +50,7 @@ export default function AuthCallback() {
     <div className="flex items-center justify-center min-h-screen bg-white">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto mb-4"></div>
-        <p className="text-gray-600">카카오 로그인 처리 중...</p>
+        <p className="text-gray-600">처리 중...</p>
       </div>
     </div>
   );

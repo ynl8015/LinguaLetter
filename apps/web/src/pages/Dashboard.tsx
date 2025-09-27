@@ -215,14 +215,21 @@ const handleSubscriptionToggle = async () => {
     });
   };
 
-  // 로딩 중일 때
+  // 로딩 중일 때 (카카오 로그인 완료 후에는 로딩 숨김)
   if (status === 'LOADING') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Navbar />
-        <LoadingAnimation size="large" message="로딩 중..." />
-      </div>
-    );
+    const isKakaoLoginComplete = localStorage.getItem('kakaoAuthStatus') === 'SUCCESS';
+    
+    if (isKakaoLoginComplete) {
+      // 카카오 로그인 완료 후에는 로딩을 보이지 않고 바로 렌더링
+      localStorage.removeItem('kakaoAuthStatus');
+    } else {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <Navbar />
+          <LoadingAnimation size="large" message="로딩 중..." />
+        </div>
+      );
+    }
   }
 
   // 로그인하지 않은 경우

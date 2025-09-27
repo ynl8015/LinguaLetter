@@ -232,10 +232,17 @@ export default function Login() {
   const handleKakaoLogin = () => {
     if (loading) return;
     
+    // 카카오 로그인 시작 플래그 설정
+    localStorage.setItem('kakaoLoginStarted', 'true');
     setLoading(true);
+    
     const currentUrl = encodeURIComponent(window.location.href);
     const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${import.meta.env.VITE_KAKAO_CLIENT_ID}&redirect_uri=${encodeURIComponent(import.meta.env.VITE_KAKAO_REDIRECT_URI || 'http://localhost:4000/auth/kakao/callback')}&response_type=code&state=${currentUrl}`;
-    window.location.href = kakaoAuthUrl;
+    
+    // 로딩 표시 후 리다이렉트
+    setTimeout(() => {
+      window.location.href = kakaoAuthUrl;
+    }, 100);
   };
 
   // Google 로그인 에러
