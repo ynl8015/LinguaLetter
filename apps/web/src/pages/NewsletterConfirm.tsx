@@ -39,11 +39,6 @@ export default function NewsletterConfirm() {
         if (result.data?.confirmSubscription?.success) {
           setStatus('success');
           setMessage(result.data.confirmSubscription.message || '구독이 성공적으로 확인되었습니다.');
-          
-          // 3초 후 대시보드로 이동
-          setTimeout(() => {
-            navigate('/dashboard');
-          }, 3000);
         } else {
           setStatus('error');
           setMessage(result.data?.confirmSubscription?.message || '구독 확인 중 오류가 발생했습니다.');
@@ -58,87 +53,115 @@ export default function NewsletterConfirm() {
     handleConfirmSubscription();
   }, [token, navigate, confirmSubscription]);
 
+  const handleGoToDashboard = () => {
+    navigate('/dashboard');
+  };
+
+  const handleGoToHome = () => {
+    navigate('/');
+  };
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       <Navbar />
       
-      <div className="pt-28 pb-24 px-6">
-        <div className="max-w-2xl mx-auto text-center">
+      <div className="flex-1 flex items-center justify-center px-6 py-12">
+        <div className="max-w-2xl w-full text-center">
           
           {status === 'loading' && (
-            <>
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto mb-6"></div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">구독 확인 중...</h1>
-              <p className="text-gray-600">잠시만 기다려주세요.</p>
-            </>
+            <div className="space-y-6">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-3 border-gray-800 mx-auto"></div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-4">구독 확인 중...</h1>
+                <p className="text-lg text-gray-600">잠시만 기다려주세요.</p>
+              </div>
+            </div>
           )}
 
           {status === 'success' && (
-            <>
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+            <div className="space-y-8">
+              <div className="space-y-6">
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                  <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                
+                <div>
+                  <h1 className="text-4xl font-bold text-gray-900 mb-4">구독 확인 완료</h1>
+                  <p className="text-xl text-gray-600 mb-6">{message}</p>
+                  <p className="text-lg text-gray-500 mb-8">
+                    매일 오전 6시에 새로운 LinguaLetter를 받아보세요
+                  </p>
+                </div>
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">구독 확인 완료</h1>
-              <p className="text-lg text-gray-600 mb-6">{message}</p>
-              <p className="text-sm text-gray-500 mb-8">
-                매일 오전 6시에 새로운 LinguaLetter를 받아보세요
-              </p>
               
-              <div className="bg-gray-50 border border-gray-200 rounded-[16px] p-6 mb-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                  환영합니다
+              <div className="bg-gradient-to-r from-gray-50 to-blue-50 border border-gray-200 rounded-2xl p-8 mb-8">
+                <h3 className="text-2xl font-semibold text-gray-800 mb-3">
+                  🎉 환영합니다!
                 </h3>
-                <p className="text-gray-600 text-sm">
-                  이제 한국어의 뉘앙스를 담은 영역 레슨을 받아보실 수 있습니다.
+                <p className="text-gray-600 text-lg leading-relaxed">
+                  이제 한국어의 뉘앙스를 담은 영어 레슨을<br/>
+                  매일 받아보실 수 있습니다.
                 </p>
               </div>
 
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="px-6 py-3 bg-gray-800 text-white rounded-[16px] font-medium hover:bg-gray-700 transition-colors"
-              >
-                지금 대시보드로 이동
-              </button>
-            </>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button
+                  onClick={handleGoToDashboard}
+                  className="px-8 py-4 bg-black text-white rounded-xl font-semibold text-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+                >
+                  대시보드로 이동
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </button>
+                
+                <button
+                  onClick={handleGoToHome}
+                  className="px-8 py-4 bg-gray-100 text-gray-800 rounded-xl font-semibold text-lg hover:bg-gray-200 transition-colors"
+                >
+                  홈으로 이동
+                </button>
+              </div>
+            </div>
           )}
 
           {status === 'error' && (
-            <>
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">구독 확인 실패</h1>
-              <p className="text-lg text-gray-600 mb-8">{message}</p>
-              
-              <div className="bg-gray-50 border border-gray-200 rounded-[16px] p-6 mb-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">문제가 발생했습니다</h3>
-                <div className="text-gray-600 text-sm text-left space-y-1">
-                  <p>• 링크가 만료되었거나 이미 사용된 것 같습니다</p>
-                  <p>• 다시 구독 신청을 해주세요</p>
+            <div className="space-y-8">
+              <div className="space-y-6">
+                <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+                  <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                
+                <div>
+                  <h1 className="text-4xl font-bold text-gray-900 mb-4">확인 실패</h1>
+                  <p className="text-xl text-gray-600 mb-6">{message}</p>
+                  <p className="text-lg text-gray-500">
+                    문제가 지속되면 고객센터로 문의해주세요.
+                  </p>
                 </div>
               </div>
-
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button
-                  onClick={() => navigate('/subscription')}
-                  className="px-6 py-3 bg-gray-800 text-white rounded-[16px] font-medium hover:bg-gray-700 transition-colors"
+                  onClick={handleGoToHome}
+                  className="px-8 py-4 bg-black text-white rounded-xl font-semibold text-lg hover:bg-gray-800 transition-colors"
                 >
-                  구독 페이지로 이동
+                  홈으로 이동
                 </button>
+                
                 <button
-                  onClick={() => navigate('/dashboard')}
-                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-[16px] font-medium hover:bg-gray-50 transition-colors"
+                  onClick={() => window.location.reload()}
+                  className="px-8 py-4 bg-gray-100 text-gray-800 rounded-xl font-semibold text-lg hover:bg-gray-200 transition-colors"
                 >
-                  대시보드로 이동
+                  다시 시도
                 </button>
               </div>
-            </>
+            </div>
           )}
-          
         </div>
       </div>
     </div>
