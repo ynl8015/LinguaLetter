@@ -309,12 +309,12 @@ export default function Teacher() {
         console.error('세션 생성 실패: 응답 데이터 없음');
         setSessionEnded(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('세션 종료 오류:', error);
       console.error('에러 상세:', {
-        message: error.message,
-        graphQLErrors: error.graphQLErrors,
-        networkError: error.networkError
+        message: error?.message,
+        graphQLErrors: error?.graphQLErrors,
+        networkError: error?.networkError
       });
       setSessionEnded(false);
       
