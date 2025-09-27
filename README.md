@@ -121,6 +121,13 @@ Nodemailer 대신, Sendgrid를 사용해 백엔드 배포환경(Railway)에 더 
 
 <img width="1390" height="794" alt="Image" src="https://github.com/user-attachments/assets/656a8468-d6f2-4974-8dfd-8b040eebf807" />
 
+### 반응형 디자인
+
+모바일에서도 사용 가능한 친화적 디자인
+
+![Image](https://github.com/user-attachments/assets/475a815f-7881-4f56-84ae-bc07cd81f5cc)
+![Image](https://github.com/user-attachments/assets/ab90b505-fc83-410e-b309-c4b2b3a66d68)
+
 ## ⚙️ 개발 원칙
 
 ### 빠른 실행과 MVP 우선 전략
@@ -154,3 +161,10 @@ Nodemailer 대신, Sendgrid를 사용해 백엔드 배포환경(Railway)에 더 
 | **External**   | ![OpenAI](https://img.shields.io/badge/OpenAI%20GPT--4o%20mini-412991?style=flat-square&logo=openai&logoColor=white) ![SerpApi](https://img.shields.io/badge/SerpApi-4285F4?style=flat-square&logo=google&logoColor=white) ![SendGrid](https://img.shields.io/badge/SendGrid-0085CA?style=flat-square&logo=sendgrid&logoColor=white) ![Google](https://img.shields.io/badge/Google%20OAuth-4285F4?style=flat-square&logo=google&logoColor=white) ![Kakao](https://img.shields.io/badge/Kakao%20OAuth-FFCD00?style=flat-square&logo=kakao&logoColor=000000) |
 | **Deployment** | ![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white) ![Railway](https://img.shields.io/badge/Railway-0B0D0E?style=flat-square&logo=railway&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white) |
 | **Collaboration** | ![Notion](https://img.shields.io/badge/Notion-000000?style=flat-square&logo=notion&logoColor=white) ![Figma](https://img.shields.io/badge/Figma-F24E1E?style=flat-square&logo=figma&logoColor=white) ![Slack](https://img.shields.io/badge/Slack-4A154B?style=flat-square&logo=slack&logoColor=white) |
+
+
+## 👩‍💻 개발자 소개
+
+| Name | Avatar | MBTI | Role |
+|-----------|--------|------|------|
+| **이유나** | <img width="80" height="80" alt="Image" src="https://github.com/user-attachments/assets/8d7bb0c4-3833-4fdb-9b25-c84bf861a7db" /> | INFP | FE (+BE) |
