@@ -54,8 +54,15 @@
 
 ## 🔗 주요 기능
 ### 1️⃣ 로그인 기능
+카카오, 구글 로그인 구현 
+<br>
+JWT 인증, 동의서 관리 로직 구현
+<br>
+<img width="700" height="450" alt="Image" src="https://github.com/user-attachments/assets/5c2708cb-67db-4a8d-845a-faa2f7ca8d69" />
+<br>
 
 ### 2️⃣ 구독 기능
+![Image](https://github.com/user-attachments/assets/d1fc8b81-79ef-4a8e-b775-73b120a7265d)
 
 ### 3️⃣ 자동뉴스생성 기능
 ### 4️⃣ 스케쥴링 기능
