@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/Navbar';
+import LoadingAnimation from '../components/LoadingAnimation';
 import { GET_LATEST_NEWS, CHAT_WITH_TEACHER, CREATE_SESSION, ANALYZE_FEEDBACK, UPDATE_MY_STATS } from '../lib/apollo';
 import emmaImage from "../assets/emma.png";
 import steveImage from "../assets/steve.png";
@@ -88,7 +89,7 @@ export default function Teacher() {
   const { user, isAuthenticated } = useAuth();
 
   // GraphQL 쿼리 및 뮤테이션
-  const { data: newsData } = useQuery(GET_LATEST_NEWS);
+  const { data: newsData, loading: newsLoading } = useQuery(GET_LATEST_NEWS);
   const [chatWithTeacher] = useMutation(CHAT_WITH_TEACHER);
   const [createSession] = useMutation(CREATE_SESSION);
   const [analyzeFeedback] = useMutation(ANALYZE_FEEDBACK);
@@ -428,6 +429,15 @@ export default function Teacher() {
       }
     }
   }, [isAuthenticated, user, teachers]);
+
+  // 뉴스 데이터 로딩 중일 때는 로딩 화면 표시
+  if (newsLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <LoadingAnimation size="large" />
+      </div>
+    );
+  }
 
   if (!selectedTeacher) {
     return (

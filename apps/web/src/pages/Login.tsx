@@ -418,22 +418,18 @@ export default function Login() {
     }
   };
 
-  // 로딩 중 (네비바 없이)
-  if (status === 'LOADING') {
-    return (
-      <div className="h-screen bg-white flex items-center justify-center">
-        <LoadingAnimation size="large" message="로딩 중..." />
-      </div>
-    );
-  }
-
   return (
     <div className="h-screen overflow-hidden bg-white relative">
       <style dangerouslySetInnerHTML={{
         __html: `
-          .google-login-wrapper div[role="button"] {
+          .google-login-wrapper {
+            width: 100% !important;
+          }
+          
+          .google-login-wrapper > div {
             width: 100% !important;
             height: 48px !important;
+            min-height: 48px !important;
             border-radius: 8px !important;
             border: 1px solid #d1d5db !important;
             background: white !important;
@@ -446,28 +442,43 @@ export default function Login() {
             align-items: center !important;
             justify-content: center !important;
             transition: all 0.2s ease !important;
+            position: relative !important;
+            box-sizing: border-box !important;
           }
           
-          .google-login-wrapper div[role="button"]:hover {
+          .google-login-wrapper > div:hover {
             background: #f9fafb !important;
             border-color: #9ca3af !important;
           }
           
-          .google-login-wrapper div[role="button"]:focus {
+          .google-login-wrapper > div:focus {
             outline: none !important;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
           }
           
-          .google-login-wrapper div[role="button"] span {
+          .google-login-wrapper > div > div {
+            width: 100% !important;
+            height: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          
+          .google-login-wrapper span {
             font-size: 14px !important;
             font-weight: 500 !important;
             color: #374151 !important;
           }
           
-          .google-login-wrapper div[role="button"] svg {
+          .google-login-wrapper svg {
             width: 20px !important;
             height: 20px !important;
             margin-right: 12px !important;
+          }
+          
+          /* 구글 로그인 버튼의 모든 하위 요소 강제 스타일링 */
+          .google-login-wrapper * {
+            box-sizing: border-box !important;
           }
         `
       }} />

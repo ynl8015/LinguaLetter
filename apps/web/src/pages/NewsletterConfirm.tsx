@@ -96,16 +96,6 @@ export default function NewsletterConfirm() {
                   </p>
                 </div>
               </div>
-              
-              <div className="bg-gradient-to-r from-gray-50 to-blue-50 border border-gray-200 rounded-2xl p-8 mb-8">
-                <h3 className="text-2xl font-semibold text-gray-800 mb-3">
-                  🎉 환영합니다!
-                </h3>
-                <p className="text-gray-600 text-lg leading-relaxed">
-                  이제 한국어의 뉘앙스를 담은 영어 레슨을<br/>
-                  매일 받아보실 수 있습니다.
-                </p>
-              </div>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button
