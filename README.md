@@ -53,22 +53,34 @@
 
 
 ## 🔗 주요 기능
-### 1️⃣ 로그인 기능
-카카오, 구글 로그인 구현 
-<br>
+### 1️⃣ 원클릭 로그인 기능
+최대한 빠르게, 부담없이 접근할 수 있도록,
+
+카카오, 구글 로그인 구현
+
 JWT 인증, 동의서 관리 로직 구현
+<br>
 <br>
 <img width="900" height="600" alt="Image" src="https://github.com/user-attachments/assets/5c2708cb-67db-4a8d-845a-faa2f7ca8d69" />
 <br>
 
 ### 2️⃣ 구독 기능
+손쉬운 구독, 해지로 부담감, 진입장벽을 낮추다.
+
 ![Image](https://github.com/user-attachments/assets/1e471e0b-c8c1-4f08-856a-a7a7d964865d)
+<br>
+
 
 ### 3️⃣ 자동뉴스생성 기능
+자동 뉴스 생성과, 수동 뉴스 수정이 가능한 하이브리드 구조로, 질 높은 기사를 작성
+
+![Image](https://github.com/user-attachments/assets/30e1389c-5875-4bde-ad19-1da959a1fd05)
+
 ### 4️⃣ 스케쥴링 기능
 
 
 ### 5️⃣ 이메일발송 기능
+Nodemailer 대신, Sendgrid를 사용해 백엔드 배포환경(Railway)에 더 잘 맞는 설정
 
 ### 6️⃣ 채팅 기능
 
