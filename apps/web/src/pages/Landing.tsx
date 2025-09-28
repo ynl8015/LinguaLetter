@@ -40,7 +40,7 @@ OPIc 스타일 피드백으로 시험을 위한 준비까지.
   ];
 
   // Cloudinary 이미지 최적화 함수
-  const optimizedImageUrl = (url) => {
+  const optimizedImageUrl = (url: string) => {
     if (!url.includes('cloudinary')) return url;
     return url.replace('/upload/', '/upload/f_auto,q_auto,w_500,c_fit/');
   };
@@ -69,11 +69,11 @@ OPIc 스타일 피드백으로 시험을 위한 준비까지.
     return () => clearInterval(interval);
   }, [slides.length]);
 
-  const goToSlide = (index) => {
+  const goToSlide = (index: number) => {
     setCurrentSlide(index);
   };
 
-  const renderImage = (imageType) => {
+  const renderImage = (imageType: string) => {
     switch (imageType) {
       case "laptop":
         return (
@@ -257,12 +257,14 @@ OPIc 스타일 피드백으로 시험을 위한 준비까지.
       </div>
 
       {/* CSS for additional optimizations */}
-      <style jsx>{`
-        .flex {
-          transform: translateZ(0);
-          backface-visibility: hidden;
-        }
-      `}</style>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .flex {
+            transform: translateZ(0);
+            backface-visibility: hidden;
+          }
+        `
+      }} />
     </div>
   );
 }
