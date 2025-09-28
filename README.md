@@ -183,7 +183,7 @@ Nodemailer 대신, Sendgrid를 사용해 백엔드 배포환경(Railway)에 더 
 ## FE 기술적 도전
 
 <details>
-<summary><b>🔗 GraphQL + REST API 하이브리드 아키텍처 구축</b></summary>
+<summary><b> GraphQL + REST API 하이브리드 아키텍처 구축</b></summary>
 
 ❓ **Problem**  
 모든 통신을 GraphQL로 통일하려 했지만, 파일 업로드, 외부 OAuth 콜백, 이메일 발송 등 특정 기능들은 REST API가 더 적합했습니다.  
@@ -196,7 +196,7 @@ Apollo Client와 Fetch API를 함께 사용하여 각 통신 방식의 장점을
 ---
 
 <details>
-<summary><b>⚡ Turbo 모노레포 환경에서의 의존성 충돌 해결</b></summary>
+<summary><b> Turbo 모노레포 환경에서의 의존성 충돌 해결</b></summary>
 
 ❓ **Problem**  
 프론트엔드와 백엔드 간 패키지 버전 충돌이 지속적으로 발생하고, workspace 설정이 복잡했습니다.  
