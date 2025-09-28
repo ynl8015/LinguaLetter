@@ -209,19 +209,6 @@ pnpm workspace와 Turbo의 캐싱 전략을 최적화하여 공통 의존성은 
 ---
 
 <details>
-<summary><b>OAuth 플랫폼별 회원가입/로그인 플로우 통합</b></summary>
-
-❓ **Problem**  
-구글과 카카오의 OAuth 구조가 달라서 동의서 처리 로직과 토큰 관리가 복잡했습니다.  
-
-❗ **Solved**  
-임시 토큰과 정규 토큰을 구분하는 **이중 인증 시스템**을 구현했습니다.  
-플랫폼별 차이점을 추상화하여 **통일된 사용자 경험**을 제공하면서도 각 플랫폼의 특성을 살렸습니다.
-</details>
-
----
-
-<details>
 <summary><b>Lazy Loading 포기를 통한 UX 개선</b></summary>
 
 ❓ **Problem**  
