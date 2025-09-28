@@ -11,6 +11,9 @@
   
 </div>
 <br>
+<br>
+<br>
+<br>
 
 # 💡 서비스 기획배경/소개
 <div align="center">
@@ -128,6 +131,10 @@ Nodemailer 대신, Sendgrid를 사용해 백엔드 배포환경(Railway)에 더 
 <img width="296" height="439" alt="Image" src="https://github.com/user-attachments/assets/5093c1b7-6df9-4854-aab1-c8633677e398" />
 <img width="350" height="440" alt="Image" src="https://github.com/user-attachments/assets/0914f82e-8060-4dca-b424-c0711d697996" />
 
+<br>
+<br>
+<br>
+
 # ⚙️ 개발 원칙
 
 ## 빠른 실행과 MVP 우선 전략
@@ -150,6 +157,9 @@ Nodemailer 대신, Sendgrid를 사용해 백엔드 배포환경(Railway)에 더 
 - 작은 단위의 실험으로 실패 비용을 최소화  
 - CI/CD 자동화를 통해 빠른 품질 개선을 위한 파이프라인을 확보
 
+<br>
+<br>
+<br>
 
 # 🛠 기술 스택
 
@@ -162,6 +172,10 @@ Nodemailer 대신, Sendgrid를 사용해 백엔드 배포환경(Railway)에 더 
 | **Deployment** | ![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white) ![Railway](https://img.shields.io/badge/Railway-0B0D0E?style=flat-square&logo=railway&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white) |
 | **Collaboration** | ![Notion](https://img.shields.io/badge/Notion-000000?style=flat-square&logo=notion&logoColor=white) ![Figma](https://img.shields.io/badge/Figma-F24E1E?style=flat-square&logo=figma&logoColor=white) ![Slack](https://img.shields.io/badge/Slack-4A154B?style=flat-square&logo=slack&logoColor=white) |
 
+<br>
+<br>
+<br>
+<br>
 
 # 핵심 경험
 ## FE 기술적 도전
@@ -221,7 +235,9 @@ Nodemailer 대신, Sendgrid를 사용해 백엔드 배포환경(Railway)에 더 
 
 ❗ Solved: 플랫폼별 어댑터 패턴을 적용해 차이점을 추상화하고, 공통 인증 플로우를 구축했습니다. 각 플랫폼의 특성을 살리면서도 일관된 사용자 경험을 제공했습니다.
 
-
+<br>
+<br>
+<br>
 
 
 # 👩‍💻 개발자 소개
