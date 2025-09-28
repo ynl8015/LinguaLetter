@@ -39,6 +39,27 @@ OPIc 스타일 피드백으로 시험을 위한 준비까지.
     },
   ];
 
+  // Cloudinary 이미지 최적화 함수
+  const optimizedImageUrl = (url) => {
+    if (!url.includes('cloudinary')) return url;
+    return url.replace('/upload/', '/upload/f_auto,q_auto,w_500,c_fit/');
+  };
+
+  // 이미지 preload
+  useEffect(() => {
+    const imageUrls = [
+      "https://res.cloudinary.com/dahbfym6q/image/upload/v1758918301/laptop_mk1rzr.png",
+      "https://res.cloudinary.com/dahbfym6q/image/upload/v1758003572/%E1%84%85%E1%85%B5%E1%86%BC%E1%84%80%E1%85%AE%E1%84%8B%E1%85%A1%E1%84%85%E1%85%A6%E1%84%90%E1%85%A5%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9_lfvtie.png",
+      emmaImage,
+      steveImage
+    ];
+
+    imageUrls.forEach(url => {
+      const img = new Image();
+      img.src = optimizedImageUrl(url);
+    });
+  }, []);
+
   // 자동 슬라이드 기능
   useEffect(() => {
     const interval = setInterval(() => {
@@ -48,19 +69,20 @@ OPIc 스타일 피드백으로 시험을 위한 준비까지.
     return () => clearInterval(interval);
   }, [slides.length]);
 
-  const goToSlide = (index: number) => {
+  const goToSlide = (index) => {
     setCurrentSlide(index);
   };
 
-  const renderImage = (imageType: string) => {
+  const renderImage = (imageType) => {
     switch (imageType) {
       case "laptop":
         return (
           <div className="relative flex justify-center">
             <img 
-              src="https://res.cloudinary.com/dahbfym6q/image/upload/v1758918301/laptop_mk1rzr.png" 
+              src={optimizedImageUrl("https://res.cloudinary.com/dahbfym6q/image/upload/v1758918301/laptop_mk1rzr.png")} 
               alt="LinguaLetter Laptop" 
               className="w-full max-w-80 lg:max-w-96 h-auto object-contain drop-shadow-2xl"
+              loading="eager"
             />
           </div>
         );
@@ -71,9 +93,10 @@ OPIc 스타일 피드백으로 시험을 위한 준비까지.
             {/* 헤더 */}
             <div className="h-10 lg:h-12 bg-gray-800 flex items-center px-3 lg:px-4">
               <img 
-                src="https://res.cloudinary.com/dahbfym6q/image/upload/v1758003572/%E1%84%85%E1%85%B5%E1%86%BC%E1%84%80%E1%85%AE%E1%84%8B%E1%85%A1%E1%84%85%E1%85%A6%E1%84%90%E1%85%A5%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9_lfvtie.png" 
+                src={optimizedImageUrl("https://res.cloudinary.com/dahbfym6q/image/upload/v1758003572/%E1%84%85%E1%85%B5%E1%86%BC%E1%84%80%E1%85%AE%E1%84%8B%E1%85%A1%E1%84%85%E1%85%A6%E1%84%90%E1%85%A5%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9_lfvtie.png")} 
                 alt="LinguaLetter Logo" 
                 className="w-5 h-5 lg:w-6 lg:h-6 object-contain mr-2 lg:mr-3"
+                loading="eager"
               />
               <span className="text-white font-semibold text-xs lg:text-sm">Daily Expression</span>
             </div>
@@ -112,6 +135,7 @@ OPIc 스타일 피드백으로 시험을 위한 준비까지.
                   src={emmaImage} 
                   alt="Emma" 
                   className="w-full h-full object-cover"
+                  loading="eager"
                 />
               </div>
               <h4 className="font-semibold text-sm sm:text-base lg:text-lg mb-1 text-gray-800">Emma</h4>
@@ -125,6 +149,7 @@ OPIc 스타일 피드백으로 시험을 위한 준비까지.
                   src={steveImage} 
                   alt="Steve" 
                   className="w-full h-full object-cover"
+                  loading="eager"
                 />
               </div>
               <h4 className="font-semibold text-sm sm:text-base lg:text-lg mb-1 text-gray-800">Steve</h4>
@@ -149,7 +174,10 @@ OPIc 스타일 피드백으로 시험을 위한 준비까지.
         <div className="flex-1 relative overflow-hidden">
           <div 
             className="flex transition-transform duration-700 ease-out h-full"
-            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+            style={{ 
+              transform: `translate3d(-${currentSlide * 100}%, 0, 0)`,
+              willChange: 'transform'
+            }}
           >
             {slides.map((slide, index) => (
               <div key={slide.id} className="w-full flex-shrink-0 h-full">
@@ -227,6 +255,14 @@ OPIc 스타일 피드백으로 시험을 위한 준비까지.
           </div>
         </div>
       </div>
+
+      {/* CSS for additional optimizations */}
+      <style jsx>{`
+        .flex {
+          transform: translateZ(0);
+          backface-visibility: hidden;
+        }
+      `}</style>
     </div>
   );
 }

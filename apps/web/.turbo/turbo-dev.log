@@ -1,12 +1,28 @@
 
-> web@0.1.0 dev /Users/yunalee/Desktop/LinguaLetter/apps/web
+> web@0.1.0 dev /Users/yunalee/LinguaLetter/apps/web
 > vite --port 3000
 
+Re-optimizing dependencies because vite config has changed
 Port 3000 is in use, trying another one...
 Port 3001 is in use, trying another one...
 
-  [32m[1mVITE[22m v5.4.20[39m  [2mready in [0m[1m107[22m[2m[0m ms[22m
+  [32m[1mVITE[22m v5.4.20[39m  [2mready in [0m[1m770[22m[2m[0m ms[22m
 
   [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m3002[22m/[39m
-  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.0.99:[1m3002[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.0.56:[1m3002[22m/[39m
 [2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m6:04:31 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/Landing.tsx, /src/index.css[22m
