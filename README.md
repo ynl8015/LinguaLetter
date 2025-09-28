@@ -180,7 +180,7 @@ Nodemailer 대신, Sendgrid를 사용해 백엔드 배포환경(Railway)에 더 
 
 # 🌟 핵심 경험
 
-## 🚀 FE 기술적 도전
+## FE 기술적 도전
 
 <details>
 <summary><b>🔗 GraphQL + REST API 하이브리드 아키텍처 구축</b></summary>
@@ -209,7 +209,7 @@ pnpm workspace와 Turbo의 캐싱 전략을 최적화하여 공통 의존성은 
 ---
 
 <details>
-<summary><b>🔐 OAuth 플랫폼별 회원가입/로그인 플로우 통합</b></summary>
+<summary><b>OAuth 플랫폼별 회원가입/로그인 플로우 통합</b></summary>
 
 ❓ **Problem**  
 구글과 카카오의 OAuth 구조가 달라서 동의서 처리 로직과 토큰 관리가 복잡했습니다.  
@@ -222,7 +222,7 @@ pnpm workspace와 Turbo의 캐싱 전략을 최적화하여 공통 의존성은 
 ---
 
 <details>
-<summary><b>🖼️ Lazy Loading 포기를 통한 UX 개선</b></summary>
+<summary><b>Lazy Loading 포기를 통한 UX 개선</b></summary>
 
 ❓ **Problem**  
 React Lazy Loading으로 번들 최적화를 했지만 메인 플로우에서 깜빡임 현상이 발생했습니다.  
@@ -235,7 +235,7 @@ React Lazy Loading으로 번들 최적화를 했지만 메인 플로우에서 �
 ---
 
 <details>
-<summary><b>🌐 Cloudinary를 통한 이미지 렌더링 최적화</b></summary>
+<summary><b>Cloudinary를 통한 이미지 렌더링 최적화</b></summary>
 
 ❓ **Problem**  
 로컬 이미지 파일들의 로딩 지연으로 인한 사용자 경험 저하가 발생했습니다.  
@@ -249,10 +249,10 @@ React Lazy Loading으로 번들 최적화를 했지만 메인 플로우에서 �
 <br>
 <br>
 
-## 🧠 BE 기술적 도전
+## BE 기술적 도전
 
 <details>
-<summary><b>🎓 AI 튜터 모델 파인튜닝을 통한 자연스러운 발화 구현</b></summary>
+<summary><b>AI 튜터 모델 파인튜닝을 통한 자연스러운 발화 구현</b></summary>
 
 ❓ **Problem**  
 일반 AI 모델로는 교육적 맥락의 자연스러운 대화가 어려웠고, 기존 교육용 모델은 GPU 리소스 문제가 발생했습니다.  
@@ -265,7 +265,7 @@ React Lazy Loading으로 번들 최적화를 했지만 메인 플로우에서 �
 ---
 
 <details>
-<summary><b>📰 다단계 AI 모델 활용한 뉴스 생성 파이프라인</b></summary>
+<summary><b>다단계 AI 모델 활용한 뉴스 생성 파이프라인</b></summary>
 
 ❓ **Problem**  
 단일 프롬프트로는 한국 문화적 뉘앙스가 반영된 고품질 번역을 얻기 어려웠습니다.  
@@ -293,10 +293,10 @@ Nodemailer의 SMTP 연결이 Railway 배포 환경에서 불안정했습니다.
 <br>
 <br>
 
-## 🛠️ DevOps & 인프라 도전
+## DevOps & 인프라 도전
 
 <details>
-<summary><b>🔑 멀티 플랫폼 OAuth 통합 인증 시스템</b></summary>
+<summary><b>멀티 플랫폼 OAuth 통합 인증 시스템</b></summary>
 
 ❓ **Problem**  
 구글과 카카오의 OAuth 구조와 콜백 처리 방식이 상이해서 통합 관리가 복잡했습니다.  
