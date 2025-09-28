@@ -278,7 +278,7 @@ React Lazy Loading으로 번들 최적화를 했지만 메인 플로우에서 �
 ---
 
 <details>
-<summary><b>📧 Railway 환경에서의 메일 발송 시스템 최적화</b></summary>
+<summary><b> Railway 환경에서의 메일 발송 시스템 최적화</b></summary>
 
 ❓ **Problem**  
 Nodemailer의 SMTP 연결이 Railway 배포 환경에서 불안정했습니다.  
