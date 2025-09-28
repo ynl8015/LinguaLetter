@@ -232,6 +232,17 @@ React Lazy Loading으로 번들 최적화를 했지만 메인 플로우에서 �
 이미지 로딩 성능을 개선하고 CLS 문제를 해결했습니다.
 </details>
 
+---
+
+<details>
+<summary><b>슬라이드 전환시 이미지 끊김 계속되는 문제</b></summary>
+
+❓ **Problem**  
+Cloudinary로 바군 이후에도 이미지 끊김이 있었습니다. 
+
+❗ **Solved**  
+이미지 preloading과 GPU 가속을 통해 슬라이드 전환을 최적화했습니다. translate3d 사용으로 하드웨어 가속을 활용하고, Cloudinary의 자동 포맷 변환과 품질 최적화 파라미터로 로딩 시간도 단축했습니다
+</details>
 
 <br>
 <br>
