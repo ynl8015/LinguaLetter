@@ -222,7 +222,7 @@ React Lazy Loading으로 번들 최적화를 했지만 메인 플로우에서 �
 ---
 
 <details>
-<summary><b>Cloudinary를 통한 이미지 렌더링 최적화</b></summary>
+<summary><b>[랜더링1] Cloudinary를 통한 이미지 렌더링 최적화</b></summary>
 
 ❓ **Problem**  
 로컬 이미지 파일들의 로딩 지연으로 인한 사용자 경험 저하가 발생했습니다.  
@@ -235,7 +235,7 @@ React Lazy Loading으로 번들 최적화를 했지만 메인 플로우에서 �
 ---
 
 <details>
-<summary><b>슬라이드 전환시 이미지 끊김 계속되는 문제</b></summary>
+<summary><b>[랜더링2] 슬라이드 전환시 이미지 끊김 계속되는 문제</b></summary>
 
 ❓ **Problem**  
 Cloudinary로 바군 이후에도 이미지 끊김이 있었습니다. 
