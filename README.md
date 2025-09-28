@@ -186,7 +186,7 @@ Nodemailer 대신, Sendgrid를 사용해 백엔드 배포환경(Railway)에 더 
 <summary><b> GraphQL + REST API 하이브리드 아키텍처 구축</b></summary>
 
 ❓ **Problem**  
-모든 통신을 GraphQL로 통일하려 했지만, 파일 업로드, 외부 OAuth 콜백, 이메일 발송 등 특정 기능들은 REST API가 더 적합했습니다.  
+모든 통신을 GraphQL로 통일하려 했지만, 외부 OAuth 콜백, 이메일 발송 등 특정 기능들은 REST API가 더 적합했습니다.  
 
 ❗ **Solved**  
 핵심 데이터 조회는 GraphQL, 특수 기능은 REST API로 분리하는 하이브리드 구조를 설계했습니다.  
