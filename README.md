@@ -244,6 +244,14 @@ Cloudinary로 바군 이후에도 이미지 끊김이 있었습니다.
 이미지 preloading과 GPU 가속을 통해 슬라이드 전환을 최적화했습니다. translate3d 사용으로 하드웨어 가속을 활용하고, Cloudinary의 자동 포맷 변환과 품질 최적화 파라미터로 로딩 시간도 단축했습니다
 </details>
 
+## 결과 : 
+### LightHouse 92점 달성
+<img width="400" height="350" alt="Image" src="https://github.com/user-attachments/assets/dd1794ee-19f4-460a-86a5-d1ba0fdb2523" />
+
+FCP 1.2초, LCP 1.5초로 빠른 초기 로딩 구현 • TBT 0ms로 메인 스레드 차단 시간 제로화 • CLS 0.027로 레이아웃 이동 최소화  
+
+이미지 렌더링 최적화 • Cloudinary CDN + 파라미터 최적화 (f_auto, q_auto, w_500) • 이미지 preload로 슬라이드 전환 시 깜빡임 제거 • GPU 가속(translate3d)으로 60fps 애니메이션 구현
+
 <br>
 <br>
 
